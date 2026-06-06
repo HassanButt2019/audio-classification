@@ -5,6 +5,7 @@ import pandas as pd
 import torch
 import torchaudio
 import librosa
+from typing import List, Optional
 from torch.utils.data import Dataset, DataLoader
 
 # Import preprocessing pipeline so __getitem__ owns the full audio → tensor flow.
@@ -68,8 +69,8 @@ class UrbanSoundDataset(Dataset):
     def __init__(
         self,
         root_dir:             str,
-        folds:                list[int] | None = None,
-        max_samples_per_fold: int | None       = None,
+        folds:                Optional[List[int]] = None,
+        max_samples_per_fold: Optional[int]       = None,
         seed:                 int              = 42,
     ):
         self.audio_dir = os.path.join(root_dir, "audio")
@@ -188,7 +189,7 @@ def get_fold_dataloaders(
     test_fold:            int,
     batch_size:           int       = 32,
     num_workers:          int       = 4,
-    max_samples_per_fold: int | None = None,
+    max_samples_per_fold: Optional[int] = None,
 ) -> tuple[DataLoader, DataLoader]:
     """Build train and test DataLoaders for one fold of 10-fold cross-validation.
 
@@ -242,7 +243,7 @@ def get_fold_dataloaders_3way(
     test_fold:            int,
     batch_size:           int       = 32,
     num_workers:          int       = 4,
-    max_samples_per_fold: int | None = None,
+    max_samples_per_fold: Optional[int] = None,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """Build train / val / test DataLoaders for one fold of 10-fold CV.
 

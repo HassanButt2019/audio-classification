@@ -213,7 +213,7 @@ def train_fold(
     os.makedirs(cfg["save_dir"], exist_ok=True)
     checkpoint_path = os.path.join(cfg["save_dir"], f"best_fold{fold}.pt")
 
-    best_val_acc = 0.0
+    best_val_acc = -1.0
     history = {
         "train_loss": [], "train_acc": [],
         "val_loss":   [], "val_acc":   [],

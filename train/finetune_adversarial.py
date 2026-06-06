@@ -66,7 +66,7 @@ def finetune_fold(
         {"best_val_acc", "history", "checkpoint_path"}
     """
     device      = get_device()
-    epochs      = cfg["finetune_epochs"]
+    epochs      = cfg.get("finetune_epochs", 15)
     attack_type = cfg.get("attack_type", "fgsm")
 
     print(f"\n{'='*60}")
@@ -96,12 +96,12 @@ def finetune_fold(
     print(f" Loaded pretrained weights (val acc: {checkpoint.get('val_acc', 0):.2f}%)")
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=cfg["finetune_lr"])
+    optimizer = torch.optim.Adam(model.parameters(), lr=cfg.get("finetune_lr", 0.0001))
 
     os.makedirs(cfg["save_dir"], exist_ok=True)
     checkpoint_path = os.path.join(cfg["save_dir"], f"best_fold{fold}.pt")
 
-    best_val_acc = 0.0
+    best_val_acc = -1.0
     history = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
 
     for epoch in range(1, epochs + 1):

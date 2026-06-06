@@ -27,23 +27,33 @@ def print_fgsm_results(clean_accuracies, fgsm_results, epsilons):
         fold_key = f"fold_{fold}"
         if fold_key not in fgsm_results:
             continue
+        if fold - 1 >= len(clean_accuracies):
+            continue
         row = f"Fold {fold:<3} {clean_accuracies[fold-1]:>7.2f}%"
         for eps in epsilons:
-            adv_acc = fgsm_results[fold_key][f"eps_{eps}"]
-            row += f" {adv_acc:>9.2f}%"
+            eps_key = f"eps_{eps}"
+            if eps_key not in fgsm_results[fold_key]:
+                row += f" {'N/A':>9}"
+            else:
+                row += f" {fgsm_results[fold_key][eps_key]:>9.2f}%"
         print(row)
 
     print("-" * 70)
 
-    completed_folds = [f for f in range(1, 11) if f"fold_{f}" in fgsm_results]
+    completed_folds = [
+        f for f in range(1, 11)
+        if f"fold_{f}" in fgsm_results and f - 1 < len(clean_accuracies)
+    ]
     avg_clean = sum(clean_accuracies[f-1] for f in completed_folds) / len(completed_folds)
     avg_row = f"{'Mean':<8} {avg_clean:>7.2f}%"
     for eps in epsilons:
         key = f"eps_{eps}"
-        avg_adv = sum(
-            fgsm_results[f"fold_{f}"][key] for f in completed_folds
-        ) / len(completed_folds)
-        avg_row += f" {avg_adv:>9.2f}%"
+        folds_with_key = [f for f in completed_folds if key in fgsm_results[f"fold_{f}"]]
+        if folds_with_key:
+            avg_adv = sum(fgsm_results[f"fold_{f}"][key] for f in folds_with_key) / len(folds_with_key)
+            avg_row += f" {avg_adv:>9.2f}%"
+        else:
+            avg_row += f" {'N/A':>9}"
     print(avg_row)
     print("=" * 70)
 
@@ -122,23 +132,33 @@ def print_bim_results(clean_accuracies, bim_results, epsilons):
         fold_key = f"fold_{fold}"
         if fold_key not in bim_results:
             continue
+        if fold - 1 >= len(clean_accuracies):
+            continue
         row = f"Fold {fold:<3} {clean_accuracies[fold-1]:>7.2f}%"
         for eps in epsilons:
-            adv_acc = bim_results[fold_key][f"eps_{eps}"]
-            row += f" {adv_acc:>9.2f}%"
+            eps_key = f"eps_{eps}"
+            if eps_key not in bim_results[fold_key]:
+                row += f" {'N/A':>9}"
+            else:
+                row += f" {bim_results[fold_key][eps_key]:>9.2f}%"
         print(row)
 
     print("-" * 70)
 
-    completed_folds = [f for f in range(1, 11) if f"fold_{f}" in bim_results]
+    completed_folds = [
+        f for f in range(1, 11)
+        if f"fold_{f}" in bim_results and f - 1 < len(clean_accuracies)
+    ]
     avg_clean = sum(clean_accuracies[f-1] for f in completed_folds) / len(completed_folds)
     avg_row = f"{'Mean':<8} {avg_clean:>7.2f}%"
     for eps in epsilons:
         key = f"eps_{eps}"
-        avg_adv = sum(
-            bim_results[f"fold_{f}"][key] for f in completed_folds
-        ) / len(completed_folds)
-        avg_row += f" {avg_adv:>9.2f}%"
+        folds_with_key = [f for f in completed_folds if key in bim_results[f"fold_{f}"]]
+        if folds_with_key:
+            avg_adv = sum(bim_results[f"fold_{f}"][key] for f in folds_with_key) / len(folds_with_key)
+            avg_row += f" {avg_adv:>9.2f}%"
+        else:
+            avg_row += f" {'N/A':>9}"
     print(avg_row)
     print("=" * 70)
 

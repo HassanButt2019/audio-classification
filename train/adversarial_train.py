@@ -40,12 +40,15 @@ ADV_CONFIG = ADV_FGSM_CONFIG
 def _build_attack(model, cfg):
     """Instantiate the attack object specified by cfg["attack_type"]."""
     attack_type = cfg.get("attack_type", "fgsm")
+    epsilon = cfg.get("adv_epsilon")
+    if epsilon is None:
+        raise KeyError("cfg must contain 'adv_epsilon'")
     if attack_type == "fgsm":
-        return get_fgsm_attack(model, cfg["adv_epsilon"])
+        return get_fgsm_attack(model, epsilon)
     elif attack_type == "bim":
         steps = cfg.get("bim_steps", 7)
-        alpha = cfg["adv_epsilon"] / steps
-        return get_bim_attack(model, cfg["adv_epsilon"], alpha, steps)
+        alpha = epsilon / steps
+        return get_bim_attack(model, epsilon, alpha, steps)
     else:
         raise ValueError(f"Unknown attack_type: {attack_type!r}. Use 'fgsm' or 'bim'.")
 
@@ -91,7 +94,10 @@ def adv_train_one_epoch(
         labels = labels.to(device)
 
         batch_size = specs.size(0)
-        n_adv      = max(1, int(batch_size * cfg["adv_ratio"]))
+        adv_ratio  = cfg.get("adv_ratio")
+        if adv_ratio is None:
+            raise KeyError("cfg must contain 'adv_ratio'")
+        n_adv      = max(1, int(batch_size * adv_ratio))
 
         # torchattacks requires eval mode for deterministic gradient computation
         # (disables Dropout, BatchNorm uses running stats)
@@ -168,7 +174,7 @@ def adv_train_fold(
     os.makedirs(cfg["save_dir"], exist_ok=True)
     checkpoint_path = os.path.join(cfg["save_dir"], f"best_fold{fold}.pt")
 
-    best_val_acc = 0.0
+    best_val_acc = -1.0
     history = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
 
     for epoch in range(1, epochs + 1):

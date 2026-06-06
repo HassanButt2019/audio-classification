@@ -27,6 +27,7 @@ import json
 import os
 import sys
 import time
+from typing import Optional
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -119,7 +120,7 @@ def cross_validate(
     num_workers:          int       = CONFIG["num_workers"],
     data_root:            str       = CONFIG["data_root"],
     save_dir:             str       = CNN_NORMAL_SAVED_MODELS_DIR,
-    max_samples_per_fold: int | None = None,
+    max_samples_per_fold: Optional[int] = None,
 ) -> dict:
     """Run the complete 10-fold cross-validation pipeline and save all results.
 
