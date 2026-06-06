@@ -91,14 +91,10 @@ if __name__ == "__main__":
     from dataset.urbansound_dataset import UrbanSoundDataset
 
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "UrbanSound8K"))
-    transform = MelSpectrogramTransform()
 
     dataset = UrbanSoundDataset(
         root_dir=root,
         folds=[1],
-        target_sample_rate=SAMPLE_RATE,
-        target_length=TARGET_SAMPLES,
-        transform=transform,
     )
 
     spec, label = dataset[0]

@@ -31,9 +31,10 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from train.train       import train_fold, CONFIG
-from evaluate.evaluate import evaluate_checkpoint
-from models.cnn        import UrbanSoundCNN
+from train.train              import train_fold, CONFIG
+from evaluate.evaluate        import evaluate_checkpoint
+from models.cnn               import UrbanSoundCNN
+from attacks.run_attacks      import run_fgsm_all_folds, print_fgsm_results
 from preprocessing.mel_spectrogram import (
     SAMPLE_RATE, N_FFT, HOP_LENGTH, N_MELS, TARGET_SAMPLES, N_TIME_FRAMES
 )
@@ -271,7 +272,10 @@ def cross_validate(
     _save_json(os.path.join(results_dir, "cv_summary.json"), cv_summary)
 
     print(f"\n  All results saved to: {results_dir}/")
-    return mean_metrics
+
+    # per-fold clean accuracy in % — used by print_fgsm_results
+    clean_accuracies = [r["accuracy"] * 100 for r in fold_results]
+    return mean_metrics, clean_accuracies
 
 
 # ── entry point ───────────────────────────────────────────────────────────────
@@ -300,9 +304,35 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    cross_validate(
+    import torch
+    device = (
+        torch.device("cuda") if torch.cuda.is_available()
+        else torch.device("mps") if torch.backends.mps.is_available()
+        else torch.device("cpu")
+    )
+
+    _, clean_accuracies = cross_validate(
         epochs               = args.epochs,
         batch_size           = args.batch_size,
         num_workers          = args.num_workers,
         max_samples_per_fold = args.quick,
     )
+
+    # ── FGSM Attack Evaluation ────────────────────────────────────────────────
+    epsilons = [0.01, 0.03, 0.1]
+
+    print("\n" + "=" * 60)
+    print(" FGSM Attack Evaluation")
+    print("=" * 60)
+
+    fgsm_results = run_fgsm_all_folds(
+        model_class      = UrbanSoundCNN,
+        saved_models_dir = CONFIG["save_dir"],
+        data_root        = CONFIG["data_root"],
+        device           = device,
+        epsilons         = epsilons,
+        batch_size       = args.batch_size,
+        num_workers      = args.num_workers,
+    )
+
+    print_fgsm_results(clean_accuracies, fgsm_results, epsilons)
