@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from dataset.urbansound_dataset import get_fold_dataloaders_3way
+from dataset.urbansound_dataset import get_fold_dataloaders
 from models.cnn import UrbanSoundCNN
 from train.train import CONFIG, get_device, evaluate
 from train.adversarial_train import adv_train_one_epoch
@@ -78,16 +78,13 @@ def finetune_fold(
     print()
     print(f"{'='*60}")
 
-    val_fold = (fold % 10) + 1
-    train_loader, val_loader, _ = get_fold_dataloaders_3way(
+    train_loader, val_loader = get_fold_dataloaders(
         root_dir             = cfg["data_root"],
         test_fold            = fold,
         batch_size           = cfg["batch_size"],
         num_workers          = cfg["num_workers"],
         max_samples_per_fold = cfg.get("max_samples_per_fold"),
     )
-    print(f" Train samples : {len(train_loader.dataset)}  (8 folds)")
-    print(f" Val   samples : {len(val_loader.dataset)}  (fold {val_fold}, for checkpoint selection)")
 
     # ── load pretrained weights ───────────────────────────────────────────────
     model      = model_class(num_classes=cfg["num_classes"], dropout=cfg["dropout"]).to(device)
