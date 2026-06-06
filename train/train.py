@@ -7,7 +7,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from dataset.urbansound_dataset import get_fold_dataloaders
+from dataset.urbansound_dataset import get_fold_dataloaders_3way
 from models.cnn import UrbanSoundCNN
 
 
@@ -157,9 +157,10 @@ def evaluate(
 # ── training loop for one fold ────────────────────────────────────────────────
 
 def train_fold(
-    fold:   int,
-    epochs: int  = CONFIG["epochs"],
-    cfg:    dict = CONFIG,
+    fold:        int,
+    epochs:      int   = CONFIG["epochs"],
+    cfg:         dict  = CONFIG,
+    model_class        = UrbanSoundCNN,
 ) -> dict:
     """Train the CNN for one fold of the 10-fold cross-validation protocol.
 
@@ -189,18 +190,22 @@ def train_fold(
     print(f"{'='*60}")
 
     # ── data loaders ──────────────────────────────────────────────────────────
-    train_loader, val_loader = get_fold_dataloaders(
+    # val_fold is a held-out fold from the training folds (not the test fold)
+    # so checkpoint selection never leaks information from the test fold.
+    val_fold = (fold % 10) + 1
+    train_loader, val_loader, _ = get_fold_dataloaders_3way(
         root_dir             = cfg["data_root"],
         test_fold            = fold,
         batch_size           = cfg["batch_size"],
         num_workers          = cfg["num_workers"],
-        max_samples_per_fold = cfg.get("max_samples_per_fold"),   # None → full data
+        max_samples_per_fold = cfg.get("max_samples_per_fold"),
     )
-    print(f" Train samples : {len(train_loader.dataset)}")
-    print(f" Val   samples : {len(val_loader.dataset)}")
+    print(f" Train samples : {len(train_loader.dataset)}  (8 folds)")
+    print(f" Val   samples : {len(val_loader.dataset)}  (fold {val_fold}, for checkpoint selection)")
+    print(f" Test  fold    : {fold}  (held out — evaluated separately after training)")
 
     # ── model / loss / optimiser ──────────────────────────────────────────────
-    model     = UrbanSoundCNN(num_classes=cfg["num_classes"], dropout=cfg["dropout"]).to(device)
+    model     = model_class(num_classes=cfg["num_classes"], dropout=cfg["dropout"]).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=cfg["lr"])
 
@@ -269,11 +274,11 @@ def train_fold(
 
 # ── full 10-fold cross-validation ─────────────────────────────────────────────
 
-def train_all_folds(epochs: int = CONFIG["epochs"], cfg: dict = CONFIG) -> None:
+def train_all_folds(epochs: int = CONFIG["epochs"], cfg: dict = CONFIG, model_class=UrbanSoundCNN) -> None:
     """Run the complete 10-fold CV and print a summary table."""
     results = {}
     for fold in range(1, 11):
-        results[fold] = train_fold(fold=fold, epochs=epochs, cfg=cfg)
+        results[fold] = train_fold(fold=fold, epochs=epochs, cfg=cfg, model_class=model_class)
 
     print(f"\n{'='*60}")
     print(" 10-Fold Cross-Validation Summary")

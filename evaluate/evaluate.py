@@ -151,6 +151,7 @@ def evaluate_checkpoint(
     batch_size:      int = 32,
     num_workers:     int = 4,
     verbose:         bool = True,
+    model_class            = UrbanSoundCNN,
 ) -> dict:
     """Load a saved checkpoint and evaluate it on its test fold.
 
@@ -161,6 +162,7 @@ def evaluate_checkpoint(
         batch_size:      Batch size for inference.
         num_workers:     DataLoader workers.
         verbose:         Print metrics table and per-class report.
+        model_class:     Model class to instantiate (default: UrbanSoundCNN).
 
     Returns:
         Metrics dictionary from compute_metrics().
@@ -169,7 +171,7 @@ def evaluate_checkpoint(
 
     # ── load model ────────────────────────────────────────────────────────────
     checkpoint = torch.load(checkpoint_path, map_location=device)
-    model      = UrbanSoundCNN(num_classes=10).to(device)
+    model      = model_class(num_classes=10).to(device)
     model.load_state_dict(checkpoint["model_state_dict"])
 
     # ── load test data ────────────────────────────────────────────────────────
@@ -201,6 +203,7 @@ def evaluate_all_folds(
     data_root:   str,
     batch_size:  int = 32,
     num_workers: int = 4,
+    model_class        = UrbanSoundCNN,
 ) -> dict:
     """Evaluate every saved fold checkpoint and compute mean metrics across all 10.
 
@@ -229,7 +232,7 @@ def evaluate_all_folds(
             continue
 
         checkpoint = torch.load(ckpt_path, map_location=device)
-        model      = UrbanSoundCNN(num_classes=10).to(device)
+        model      = model_class(num_classes=10).to(device)
         model.load_state_dict(checkpoint["model_state_dict"])
 
         _, test_loader = get_fold_dataloaders(
@@ -254,6 +257,11 @@ def evaluate_all_folds(
         )
 
     # ── mean across folds ──────────────────────────────────────────────────────
+    if not all_metrics:
+        raise RuntimeError(
+            f"No checkpoints found in '{save_dir}'. "
+            "Run training first before calling evaluate_all_folds()."
+        )
     keys = all_metrics[0].keys()
     mean_metrics = {k: sum(m[k] for m in all_metrics) / len(all_metrics) for k in keys}
 

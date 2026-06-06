@@ -235,6 +235,56 @@ def get_fold_dataloaders(
     return train_loader, test_loader
 
 
+# ── Three-way DataLoader factory ─────────────────────────────────────────────
+
+def get_fold_dataloaders_3way(
+    root_dir:             str,
+    test_fold:            int,
+    batch_size:           int       = 32,
+    num_workers:          int       = 4,
+    max_samples_per_fold: int | None = None,
+) -> tuple[DataLoader, DataLoader, DataLoader]:
+    """Build train / val / test DataLoaders for one fold of 10-fold CV.
+
+    To avoid leaking the test fold into checkpoint selection, a separate
+    validation fold is carved out of the training folds using a deterministic
+    rotation:
+
+        val_fold  = (test_fold % 10) + 1   →  cycles 2,3,...,10,1
+        test_fold = held out entirely for final reporting
+        train     = remaining 8 folds
+
+    This means checkpoint selection (early stopping) never sees the test fold.
+
+    Args:
+        root_dir:    Path to the UrbanSound8K root directory.
+        test_fold:   Fold number (1–10) held out for final testing.
+        batch_size:  Samples per batch for all three loaders.
+        num_workers: CPU workers for parallel data loading.
+
+    Returns:
+        (train_loader, val_loader, test_loader)
+    """
+    val_fold    = (test_fold % 10) + 1
+    train_folds = [f for f in range(1, 11) if f != test_fold and f != val_fold]
+
+    train_dataset = UrbanSoundDataset(root_dir=root_dir, folds=train_folds,
+                                      max_samples_per_fold=max_samples_per_fold)
+    val_dataset   = UrbanSoundDataset(root_dir=root_dir, folds=[val_fold],
+                                      max_samples_per_fold=max_samples_per_fold)
+    test_dataset  = UrbanSoundDataset(root_dir=root_dir, folds=[test_fold],
+                                      max_samples_per_fold=max_samples_per_fold)
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
+                              num_workers=num_workers, pin_memory=True)
+    val_loader   = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False,
+                              num_workers=num_workers, pin_memory=True)
+    test_loader  = DataLoader(test_dataset,  batch_size=batch_size, shuffle=False,
+                              num_workers=num_workers, pin_memory=True)
+
+    return train_loader, val_loader, test_loader
+
+
 # ── smoke-test ────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
