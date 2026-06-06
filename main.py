@@ -12,29 +12,29 @@ Rotation protocol
 Each audio clip appears in the test set exactly once across the 10 runs.
 Final reported numbers are the mean (± std) of per-fold metrics.
 
-Saved artefacts (all under results/<run_id>/)
----------------------------------------------
-  config.json          — hyperparameters, preprocessing params, model architecture
-  fold_1_results.json  — training history + test metrics for fold 1
-  ...
-  fold_10_results.json
-  cv_summary.json      — per-fold table + mean ± std across all 10 folds
+Saved artefacts
+---------------
+  results/cnn/normal/
+    config.json              — hyperparameters, preprocessing params, model architecture
+    fold_1_results.json  ... fold_10_results.json
+    cv_summary.json          — per-fold table + mean ± std across all 10 folds
 
-Model weights are saved separately under saved_models/best_fold{k}.pt
+  saved_models/cnn/normal/
+    best_fold1.pt  ...  best_fold10.pt
 """
 
 import json
 import os
 import sys
 import time
-from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(__file__))
 
 from train.train              import train_fold, CONFIG
 from evaluate.evaluate        import evaluate_checkpoint
 from models.cnn               import UrbanSoundCNN
-from attacks.run_attacks      import run_fgsm_all_folds, print_fgsm_results
+from attacks.run_attacks      import run_fgsm_all_folds, print_fgsm_results, \
+                                     run_bim_all_folds,  print_bim_results
 from preprocessing.mel_spectrogram import (
     SAMPLE_RATE, N_FFT, HOP_LENGTH, N_MELS, TARGET_SAMPLES, N_TIME_FRAMES
 )
@@ -107,12 +107,18 @@ def build_config_snapshot(epochs: int, batch_size: int) -> dict:
 
 # ── 10-fold cross-validation ──────────────────────────────────────────────────
 
+_BASE_DIR = os.path.dirname(__file__)
+
+CNN_NORMAL_RESULTS_DIR     = os.path.join(_BASE_DIR, "results",      "cnn", "normal")
+CNN_NORMAL_SAVED_MODELS_DIR = os.path.join(_BASE_DIR, "saved_models", "cnn", "normal")
+
+
 def cross_validate(
     epochs:               int       = CONFIG["epochs"],
     batch_size:           int       = CONFIG["batch_size"],
     num_workers:          int       = CONFIG["num_workers"],
     data_root:            str       = CONFIG["data_root"],
-    save_dir:             str       = CONFIG["save_dir"],
+    save_dir:             str       = CNN_NORMAL_SAVED_MODELS_DIR,
     max_samples_per_fold: int | None = None,
 ) -> dict:
     """Run the complete 10-fold cross-validation pipeline and save all results.
@@ -127,18 +133,21 @@ def cross_validate(
         5. Save cv_summary.json  (per-fold table + mean ± std)
         6. Print summary table to stdout
 
+    Results are saved under results/cnn/normal/ and checkpoints under
+    saved_models/cnn/normal/ to match the unified experiment structure.
+
     Returns:
         Dictionary of mean metric values across all 10 folds.
     """
-    wall_start = time.time()
-    run_id     = datetime.now().strftime("%Y%m%d_%H%M%S")
-    results_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "results", run_id))
+    wall_start  = time.time()
+    results_dir = CNN_NORMAL_RESULTS_DIR
     os.makedirs(results_dir, exist_ok=True)
     os.makedirs(save_dir,    exist_ok=True)
 
     print(f"\n{'#'*60}")
-    print(f"#  Run ID : {run_id}")
+    print(f"#  Model  : CNN / normal")
     print(f"#  Results: {results_dir}")
+    print(f"#  Models : {save_dir}")
     print(f"{'#'*60}")
 
     # ── save config immediately so it exists even if training is interrupted ──
@@ -246,7 +255,8 @@ def cross_validate(
 
     # ── Step 6: save cv_summary.json ──────────────────────────────────────────
     cv_summary = {
-        "run_id":     run_id,
+        "model":      "cnn",
+        "mode":       "normal",
         "wall_time":  wall_time_str,
         "config": {
             "epochs":     epochs,
@@ -275,7 +285,7 @@ def cross_validate(
 
     # per-fold clean accuracy in % — used by print_fgsm_results
     clean_accuracies = [r["accuracy"] * 100 for r in fold_results]
-    return mean_metrics, clean_accuracies
+    return mean_metrics, clean_accuracies, results_dir, cv_summary
 
 
 # ── entry point ───────────────────────────────────────────────────────────────
@@ -311,28 +321,58 @@ if __name__ == "__main__":
         else torch.device("cpu")
     )
 
-    _, clean_accuracies = cross_validate(
+    _, clean_accuracies, results_dir, cv_summary = cross_validate(
         epochs               = args.epochs,
         batch_size           = args.batch_size,
         num_workers          = args.num_workers,
         max_samples_per_fold = args.quick,
     )
 
-    # ── FGSM Attack Evaluation ────────────────────────────────────────────────
     epsilons = [0.01, 0.03, 0.1]
 
+    # ── FGSM Attack Evaluation ────────────────────────────────────────────────
     print("\n" + "=" * 60)
     print(" FGSM Attack Evaluation")
     print("=" * 60)
 
     fgsm_results = run_fgsm_all_folds(
         model_class      = UrbanSoundCNN,
-        saved_models_dir = CONFIG["save_dir"],
+        saved_models_dir = CNN_NORMAL_SAVED_MODELS_DIR,
         data_root        = CONFIG["data_root"],
         device           = device,
         epsilons         = epsilons,
         batch_size       = args.batch_size,
         num_workers      = args.num_workers,
     )
-
     print_fgsm_results(clean_accuracies, fgsm_results, epsilons)
+
+    # ── BIM Attack Evaluation ─────────────────────────────────────────────────
+    print("\n" + "=" * 60)
+    print(" BIM Attack Evaluation  (steps=10)")
+    print("=" * 60)
+
+    bim_results = run_bim_all_folds(
+        model_class      = UrbanSoundCNN,
+        saved_models_dir = CNN_NORMAL_SAVED_MODELS_DIR,
+        data_root        = CONFIG["data_root"],
+        device           = device,
+        epsilons         = epsilons,
+        steps            = 10,
+        batch_size       = args.batch_size,
+        num_workers      = args.num_workers,
+    )
+    print_bim_results(clean_accuracies, bim_results, epsilons)
+
+    # ── update cv_summary.json with attack results ────────────────────────────
+    cv_summary["fgsm"] = {
+        f"fold_{f}": fgsm_results[f"fold_{f}"]
+        for f in range(1, 11)
+        if f"fold_{f}" in fgsm_results
+    }
+    cv_summary["bim"] = {
+        f"fold_{f}": bim_results[f"fold_{f}"]
+        for f in range(1, 11)
+        if f"fold_{f}" in bim_results
+    }
+    _save_json(os.path.join(results_dir, "cv_summary.json"), cv_summary)
+    print("\n  cv_summary.json updated with FGSM and BIM results.")
