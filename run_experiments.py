@@ -68,6 +68,9 @@ from attacks.run_attacks       import run_fgsm_all_folds, print_fgsm_results, \
 from preprocessing.mel_spectrogram import (
     SAMPLE_RATE, N_FFT, HOP_LENGTH, N_MELS, TARGET_SAMPLES, N_TIME_FRAMES
 )
+from config_loader import get_eval_attack_config
+
+_eval_cfg = get_eval_attack_config()
 
 
 # ── paths ─────────────────────────────────────────────────────────────────────
@@ -299,8 +302,8 @@ def run_experiment(model_name, mode, max_samples_per_fold=None, epochs=None):
     wall_time = f"{h:02d}h {mn:02d}m {sc:02d}s"
 
     # ── attack evaluation ─────────────────────────────────────────────────────
-    epsilons  = [0.01, 0.03, 0.1]
-    bim_steps = 10
+    epsilons  = _eval_cfg["eval_epsilons"]
+    bim_steps = _eval_cfg["bim_eval_steps"]
     device    = _device()
 
     clean_accuracies = [r["accuracy"] * 100 for r in fold_results]

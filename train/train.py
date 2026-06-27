@@ -7,22 +7,14 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from dataset.urbansound_dataset import get_fold_dataloaders_3way
+from dataset.urbansound_dataset import get_fold_dataloaders
 from models.cnn import UrbanSoundCNN
+from config_loader import get_base_config
 
 
 # ── training configuration ────────────────────────────────────────────────────
 
-CONFIG = {
-    "data_root":   os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "UrbanSound8K")),
-    "save_dir":    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "saved_models")),
-    "batch_size":  32,
-    "lr":          0.001,
-    "epochs":      30,
-    "num_workers": 4,
-    "dropout":     0.5,
-    "num_classes": 10,
-}
+CONFIG = get_base_config()
 
 
 # ── device selection ──────────────────────────────────────────────────────────
@@ -190,19 +182,15 @@ def train_fold(
     print(f"{'='*60}")
 
     # ── data loaders ──────────────────────────────────────────────────────────
-    # val_fold is a held-out fold from the training folds (not the test fold)
-    # so checkpoint selection never leaks information from the test fold.
-    val_fold = (fold % 10) + 1
-    train_loader, val_loader, _ = get_fold_dataloaders_3way(
+    train_loader, val_loader = get_fold_dataloaders(
         root_dir             = cfg["data_root"],
         test_fold            = fold,
         batch_size           = cfg["batch_size"],
         num_workers          = cfg["num_workers"],
-        max_samples_per_fold = cfg.get("max_samples_per_fold"),
+        max_samples_per_fold = cfg.get("max_samples_per_fold"),   # None → full data
     )
-    print(f" Train samples : {len(train_loader.dataset)}  (8 folds)")
-    print(f" Val   samples : {len(val_loader.dataset)}  (fold {val_fold}, for checkpoint selection)")
-    print(f" Test  fold    : {fold}  (held out — evaluated separately after training)")
+    print(f" Train samples : {len(train_loader.dataset)}")
+    print(f" Val   samples : {len(val_loader.dataset)}")
 
     # ── model / loss / optimiser ──────────────────────────────────────────────
     model     = model_class(num_classes=cfg["num_classes"], dropout=cfg["dropout"]).to(device)

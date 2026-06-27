@@ -9,3 +9,6 @@ numpy>=1.26.0
 scikit-learn>=1.3.0
 torchattacks>=3.5.0
 ptflops>=0.7.0
+pyyaml>=6.0
+streamlit
+plotly

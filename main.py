@@ -39,6 +39,11 @@ from attacks.run_attacks      import run_fgsm_all_folds, print_fgsm_results, \
 from preprocessing.mel_spectrogram import (
     SAMPLE_RATE, N_FFT, HOP_LENGTH, N_MELS, TARGET_SAMPLES, N_TIME_FRAMES
 )
+from config_loader import get_eval_attack_config
+
+_eval_cfg   = get_eval_attack_config()
+_EPSILONS   = _eval_cfg["eval_epsilons"]
+_BIM_STEPS  = _eval_cfg["bim_eval_steps"]
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -329,7 +334,7 @@ if __name__ == "__main__":
         max_samples_per_fold = args.quick,
     )
 
-    epsilons = [0.01, 0.03, 0.1]
+    epsilons = _EPSILONS
 
     # ── FGSM Attack Evaluation ────────────────────────────────────────────────
     print("\n" + "=" * 60)
@@ -349,7 +354,7 @@ if __name__ == "__main__":
 
     # ── BIM Attack Evaluation ─────────────────────────────────────────────────
     print("\n" + "=" * 60)
-    print(" BIM Attack Evaluation  (steps=10)")
+    print(f" BIM Attack Evaluation  (steps={_BIM_STEPS})")
     print("=" * 60)
 
     bim_results = run_bim_all_folds(
@@ -358,7 +363,7 @@ if __name__ == "__main__":
         data_root        = CONFIG["data_root"],
         device           = device,
         epsilons         = epsilons,
-        steps            = 10,
+        steps            = _BIM_STEPS,
         batch_size       = args.batch_size,
         num_workers      = args.num_workers,
     )

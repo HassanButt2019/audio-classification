@@ -1,0 +1,47 @@
+
+CNN (Simple CNN) — In Progress
+
+ Build CNN pipeline
+ Verify on 100 samples per fold
+ Run full dataset — 10-fold cross validation
+ FGSM attack on baseline
+ BIM attack on baseline
+ AT with FGSM
+ AT with BIM
+ Rerun AT with batch size 128 (fix methodological inconsistency)
+ Adversarial Fine-Tuning with FGSM
+ Adversarial Fine-Tuning with BIM
+ Efficiency measurement with ptflops (CNN baseline)
+ Efficiency measurement with ptflops (AT FGSM)
+ Efficiency measurement with ptflops (AT BIM)
+ Efficiency measurement with ptflops (AFT FGSM)
+ Efficiency measurement with ptflops (AFT BIM)
+
+
+
+
+Build VGGish architecture
+ Run full dataset baseline — 10-fold cross validation
+ Verify accuracy against literature (target 73% to 79%)
+ FGSM attack on VGGish baseline
+ BIM attack on VGGish baseline
+ AT with FGSM on VGGish
+ AT with BIM on VGGish
+ Adversarial Fine-Tuning with FGSM on VGGish
+ Adversarial Fine-Tuning with BIM on VGGish
+ Efficiency measurement with ptflops (all VGGish experiments)
+
+
+
+
+CRNN — Not Started
+ Build CRNN architecture with Bidirectional GRU
+ Run full dataset baseline — 10-fold cross validation
+ Verify accuracy is reasonable
+ FGSM attack on CRNN baseline
+ BIM attack on CRNN baseline
+ AT with FGSM on CRNN
+ AT with BIM on CRNN
+ Adversarial Fine-Tuning with FGSM on CRNN
+ Adversarial Fine-Tuning with BIM on CRNN
+ Efficiency measurement with ptflops (all CRNN experiments)

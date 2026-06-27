@@ -1,0 +1,38 @@
+training:
+  batch_size: 128
+  lr: 0.001
+  epochs: 30
+  num_workers: 4
+  dropout: 0.5
+  num_classes: 10
+  data_root: "data/UrbanSound8K"
+  save_dir: "saved_models"
+
+preprocessing:
+  sample_rate: 22050
+  n_fft: 1024
+  hop_length: 512
+  n_mels: 64
+  target_samples: 66048
+  n_time_frames: 128
+
+model:
+  architecture: UrbanSoundCNN
+  conv_filters: [32, 64, 128]
+  kernel_size: 3
+  fc_units: 256
+
+attacks:
+  eval_epsilons: [0.01, 0.03, 0.1]  
+  fgsm:
+    epsilon: 0.03    
+    adv_ratio: 0.5
+  bim:
+    epsilon: 0.03  
+    adv_ratio: 0.5
+    train_steps: 7 
+    eval_steps: 10 
+
+finetune:
+  epochs: 15
+  lr: 0.0001

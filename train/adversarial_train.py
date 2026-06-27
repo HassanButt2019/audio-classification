@@ -7,29 +7,18 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from dataset.urbansound_dataset import get_fold_dataloaders_3way
+from dataset.urbansound_dataset import get_fold_dataloaders
 from models.cnn import UrbanSoundCNN
 from attacks.fgsm import get_fgsm_attack
 from attacks.bim  import get_bim_attack
-from train.train import CONFIG, get_device, evaluate
+from train.train import get_device, evaluate
+from config_loader import get_adv_fgsm_config, get_adv_bim_config
 
 
 # ── configs ───────────────────────────────────────────────────────────────────
 
-ADV_FGSM_CONFIG = {
-    **CONFIG,
-    "attack_type": "fgsm",
-    "adv_epsilon": 0.03,
-    "adv_ratio":   0.5,
-}
-
-ADV_BIM_CONFIG = {
-    **CONFIG,
-    "attack_type": "bim",
-    "adv_epsilon": 0.03,
-    "adv_ratio":   0.5,
-    "bim_steps":   7,     # fewer steps than evaluation to keep training time reasonable
-}
+ADV_FGSM_CONFIG = get_adv_fgsm_config()
+ADV_BIM_CONFIG  = get_adv_bim_config()
 
 # backward-compat alias
 ADV_CONFIG = ADV_FGSM_CONFIG
@@ -156,16 +145,13 @@ def adv_train_fold(
     print()
     print(f"{'='*60}")
 
-    val_fold = (fold % 10) + 1
-    train_loader, val_loader, _ = get_fold_dataloaders_3way(
+    train_loader, val_loader = get_fold_dataloaders(
         root_dir             = cfg["data_root"],
         test_fold            = fold,
         batch_size           = cfg["batch_size"],
         num_workers          = cfg["num_workers"],
         max_samples_per_fold = cfg.get("max_samples_per_fold"),
     )
-    print(f" Train samples : {len(train_loader.dataset)}  (8 folds)")
-    print(f" Val   samples : {len(val_loader.dataset)}  (fold {val_fold}, for checkpoint selection)")
 
     model     = model_class(num_classes=cfg["num_classes"], dropout=cfg["dropout"]).to(device)
     criterion = nn.CrossEntropyLoss()

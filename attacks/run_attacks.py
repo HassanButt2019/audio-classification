@@ -228,7 +228,7 @@ def run_bim_all_folds(model_class, saved_models_dir, data_root,
 
 if __name__ == "__main__":
     from models.cnn import UrbanSoundCNN
-    from train.train import CONFIG
+    from config_loader import get_base_config, get_eval_attack_config
 
     device = (
         torch.device("cuda") if torch.cuda.is_available()
@@ -236,10 +236,13 @@ if __name__ == "__main__":
         else torch.device("cpu")
     )
 
+    _base    = get_base_config()
+    _eval    = get_eval_attack_config()
+    epsilons = _eval["eval_epsilons"]
+
     saved_models_dir = os.path.join(
         os.path.dirname(__file__), "..", "saved_models", "cnn", "normal"
     )
-    epsilons = [0.01, 0.03, 0.1]
 
     # ── clean accuracy ────────────────────────────────────────────────────────
     clean_accuracies = []
@@ -251,10 +254,10 @@ if __name__ == "__main__":
         model.eval()
 
         _, test_loader = get_fold_dataloaders(
-            root_dir    = CONFIG["data_root"],
+            root_dir    = _base["data_root"],
             test_fold   = fold,
-            batch_size  = 32,
-            num_workers = CONFIG["num_workers"],
+            batch_size  = _base["batch_size"],
+            num_workers = _base["num_workers"],
         )
 
         correct = total = 0
@@ -273,9 +276,11 @@ if __name__ == "__main__":
     fgsm_results = run_fgsm_all_folds(
         model_class      = UrbanSoundCNN,
         saved_models_dir = saved_models_dir,
-        data_root        = CONFIG["data_root"],
+        data_root        = _base["data_root"],
         device           = device,
         epsilons         = epsilons,
+        batch_size       = _base["batch_size"],
+        num_workers      = _base["num_workers"],
     )
     print_fgsm_results(clean_accuracies, fgsm_results, epsilons)
 
@@ -283,9 +288,11 @@ if __name__ == "__main__":
     bim_results = run_bim_all_folds(
         model_class      = UrbanSoundCNN,
         saved_models_dir = saved_models_dir,
-        data_root        = CONFIG["data_root"],
+        data_root        = _base["data_root"],
         device           = device,
         epsilons         = epsilons,
-        steps            = 10,
+        steps            = _eval["bim_eval_steps"],
+        batch_size       = _base["batch_size"],
+        num_workers      = _base["num_workers"],
     )
     print_bim_results(clean_accuracies, bim_results, epsilons)
