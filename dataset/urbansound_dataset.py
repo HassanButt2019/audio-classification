@@ -6,7 +6,7 @@ import torch
 import torchaudio
 import librosa
 from typing import List, Optional
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, random_split
 
 # Import preprocessing pipeline so __getitem__ owns the full audio → tensor flow.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -71,7 +71,8 @@ class UrbanSoundDataset(Dataset):
         root_dir:             str,
         folds:                Optional[List[int]] = None,
         max_samples_per_fold: Optional[int]       = None,
-        seed:                 int              = 42,
+        seed:                 int                 = 42,
+        transform                                 = None,
     ):
         self.audio_dir = os.path.join(root_dir, "audio")
 
@@ -99,8 +100,9 @@ class UrbanSoundDataset(Dataset):
         # hot path; dict access is faster than pandas row access at scale.
         self.samples = df[["slice_file_name", "fold", "classID"]].to_dict("records")
 
-        # Single shared transform instance — stateless, so safe across workers.
-        self._transform = MelSpectrogramTransform()
+        # Injectable transform — defaults to CNN transform when not provided.
+        # Pass VGGishMelSpectrogramTransform() for VGGish training.
+        self._transform = transform if transform is not None else MelSpectrogramTransform()
 
     # ── Contract method 1 ─────────────────────────────────────────────────────
 
@@ -190,6 +192,7 @@ def get_fold_dataloaders(
     batch_size:           int       = 32,
     num_workers:          int       = 4,
     max_samples_per_fold: Optional[int] = None,
+    transform                           = None,
 ) -> tuple[DataLoader, DataLoader]:
     """Build train and test DataLoaders for one fold of 10-fold cross-validation.
 
@@ -207,6 +210,8 @@ def get_fold_dataloaders(
         test_fold:   Fold number (1–10) held out for testing.
         batch_size:  Samples per batch for both loaders.
         num_workers: CPU workers for parallel data loading.
+        transform:   Preprocessing transform. None → CNN default (MelSpectrogramTransform).
+                     Pass VGGishMelSpectrogramTransform() for VGGish.
 
     Returns:
         (train_loader, test_loader)
@@ -214,9 +219,11 @@ def get_fold_dataloaders(
     train_folds = [f for f in range(1, 11) if f != test_fold]
 
     train_dataset = UrbanSoundDataset(root_dir=root_dir, folds=train_folds,
-                                      max_samples_per_fold=max_samples_per_fold)
+                                      max_samples_per_fold=max_samples_per_fold,
+                                      transform=transform)
     test_dataset  = UrbanSoundDataset(root_dir=root_dir, folds=[test_fold],
-                                      max_samples_per_fold=max_samples_per_fold)
+                                      max_samples_per_fold=max_samples_per_fold,
+                                      transform=transform)
 
     train_loader = DataLoader(
         train_dataset,
@@ -234,6 +241,89 @@ def get_fold_dataloaders(
     )
 
     return train_loader, test_loader
+
+
+def get_fold_dataloaders_with_val(
+    root_dir:             str,
+    test_fold:            int,
+    transform,
+    val_fraction:         float     = 0.1,
+    batch_size:           int       = 128,
+    num_workers:          int       = 4,
+    seed:                 int       = 42,
+    max_samples_per_fold: Optional[int] = None,
+) -> tuple[DataLoader, DataLoader, DataLoader]:
+    """Build train / val / test DataLoaders for one fold of 10-fold CV.
+
+    The val split is carved out of the 9 training folds (not from the test
+    fold), so test integrity is never compromised. The split uses a fixed
+    seed for reproducibility.
+
+    Used by VGGish training (and any future model that needs early stopping
+    against a held-out val set).
+
+    Predefined UrbanSound8K folds are used exactly — no random re-splitting
+    of the full dataset.
+
+    Args:
+        root_dir:     Path to the UrbanSound8K root directory.
+        test_fold:    Fold number (1–10) held out for final testing.
+        transform:    Preprocessing transform (e.g. VGGishMelSpectrogramTransform()).
+        val_fraction: Fraction of training samples held out for validation.
+        batch_size:   Samples per batch.
+        num_workers:  CPU workers for parallel loading.
+        seed:         Random seed for the val split.
+
+    Returns:
+        (train_loader, val_loader, test_loader)
+    """
+    train_folds = [f for f in range(1, 11) if f != test_fold]
+
+    full_train = UrbanSoundDataset(
+        root_dir=root_dir,
+        folds=train_folds,
+        max_samples_per_fold=max_samples_per_fold,
+        transform=transform,
+    )
+    test_dataset = UrbanSoundDataset(
+        root_dir=root_dir,
+        folds=[test_fold],
+        transform=transform,
+    )
+
+    n_total = len(full_train)
+    n_val   = max(1, int(n_total * val_fraction))
+    n_train = n_total - n_val
+
+    train_dataset, val_dataset = random_split(
+        full_train,
+        [n_train, n_val],
+        generator=torch.Generator().manual_seed(seed),
+    )
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=True,
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+    )
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+    )
+
+    return train_loader, val_loader, test_loader
 
 
 # ── smoke-test ────────────────────────────────────────────────────────────────

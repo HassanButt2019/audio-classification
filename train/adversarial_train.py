@@ -118,6 +118,7 @@ def adv_train_fold(
     epochs:      int  = None,
     cfg:         dict = ADV_FGSM_CONFIG,
     model_class        = UrbanSoundCNN,
+    transform          = None,
 ) -> dict:
     """Adversarially train a model from scratch for one fold of 10-fold CV.
 
@@ -151,6 +152,7 @@ def adv_train_fold(
         batch_size           = cfg["batch_size"],
         num_workers          = cfg["num_workers"],
         max_samples_per_fold = cfg.get("max_samples_per_fold"),
+        transform            = transform,
     )
 
     model     = model_class(num_classes=cfg["num_classes"], dropout=cfg["dropout"]).to(device)

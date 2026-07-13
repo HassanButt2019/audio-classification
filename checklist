@@ -1,47 +1,50 @@
 
-CNN (Simple CNN) — In Progress
+CNN (Simple CNN) — DONE
 
- Build CNN pipeline
- Verify on 100 samples per fold
- Run full dataset — 10-fold cross validation
- FGSM attack on baseline
- BIM attack on baseline
- AT with FGSM
- AT with BIM
- Rerun AT with batch size 128 (fix methodological inconsistency)
- Adversarial Fine-Tuning with FGSM
- Adversarial Fine-Tuning with BIM
- Efficiency measurement with ptflops (CNN baseline)
- Efficiency measurement with ptflops (AT FGSM)
- Efficiency measurement with ptflops (AT BIM)
- Efficiency measurement with ptflops (AFT FGSM)
- Efficiency measurement with ptflops (AFT BIM)
-
-
-
-
-Build VGGish architecture
- Run full dataset baseline — 10-fold cross validation
- Verify accuracy against literature (target 73% to 79%)
- FGSM attack on VGGish baseline
- BIM attack on VGGish baseline
- AT with FGSM on VGGish
- AT with BIM on VGGish
- Adversarial Fine-Tuning with FGSM on VGGish
- Adversarial Fine-Tuning with BIM on VGGish
- Efficiency measurement with ptflops (all VGGish experiments)
+ [x] Build CNN pipeline
+ [x] Verify on 100 samples per fold
+ [x] Run full dataset — 10-fold cross validation
+ [x] FGSM attack on baseline
+ [x] BIM attack on baseline
+ [x] AT with FGSM
+ [x] AT with BIM
+ [x] Rerun AT with batch size 128 (fix methodological inconsistency)
+ [x] Adversarial Fine-Tuning with FGSM
+ [x] Adversarial Fine-Tuning with BIM
+ [x] Efficiency measurement with ptflops (CNN baseline)
+ [x] Efficiency measurement with ptflops (AT FGSM)
+ [x] Efficiency measurement with ptflops (AT BIM)
+ [x] Efficiency measurement with ptflops (AFT FGSM)
+ [x] Efficiency measurement with ptflops (AFT BIM)
 
 
 
 
-CRNN — Not Started
- Build CRNN architecture with Bidirectional GRU
- Run full dataset baseline — 10-fold cross validation
- Verify accuracy is reasonable
- FGSM attack on CRNN baseline
- BIM attack on CRNN baseline
- AT with FGSM on CRNN
- AT with BIM on CRNN
- Adversarial Fine-Tuning with FGSM on CRNN
- Adversarial Fine-Tuning with BIM on CRNN
- Efficiency measurement with ptflops (all CRNN experiments)
+VGGish — Architecture Built, Experiments Not Started
+
+ [x] Build VGGish architecture
+ [ ] Run full dataset baseline — 10-fold cross validation
+ [ ] Verify accuracy against literature (target 73% to 79%)
+ [ ] FGSM attack on VGGish baseline
+ [ ] BIM attack on VGGish baseline
+ [ ] AT with FGSM on VGGish
+ [ ] AT with BIM on VGGish
+ [ ] Adversarial Fine-Tuning with FGSM on VGGish
+ [ ] Adversarial Fine-Tuning with BIM on VGGish
+ [ ] Efficiency measurement with ptflops (all VGGish experiments)
+
+
+
+
+CRNN — All Experiments Done, Efficiency Pending
+
+ [x] Build CRNN architecture with Bidirectional GRU
+ [x] Run full dataset baseline — 10-fold cross validation
+ [x] Verify accuracy is reasonable
+ [x] FGSM attack on CRNN baseline
+ [x] BIM attack on CRNN baseline
+ [x] AT with FGSM on CRNN
+ [x] AT with BIM on CRNN
+ [x] Adversarial Fine-Tuning with FGSM on CRNN
+ [x] Adversarial Fine-Tuning with BIM on CRNN
+ [ ] Efficiency measurement with ptflops (all CRNN experiments)

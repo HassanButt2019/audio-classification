@@ -1,0 +1,32 @@
+[
+  {
+    "strategy": "Baseline",
+    "epochs": 30,
+    "wall_time": "07h 17m 59s",
+    "relative_cost": 1.0
+  },
+  {
+    "strategy": "AT-FGSM",
+    "epochs": 30,
+    "wall_time": "09h 21m 18s",
+    "relative_cost": 1.28
+  },
+  {
+    "strategy": "AT-BIM",
+    "epochs": 30,
+    "wall_time": "07h 54m 54s",
+    "relative_cost": 1.08
+  },
+  {
+    "strategy": "AFT-FGSM",
+    "epochs": 10,
+    "wall_time": "03h 53m 32s",
+    "relative_cost": 0.53
+  },
+  {
+    "strategy": "AFT-BIM",
+    "epochs": 10,
+    "wall_time": "02h 42m 37s",
+    "relative_cost": 0.37
+  }
+]

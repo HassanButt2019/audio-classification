@@ -3,15 +3,27 @@ import torch.nn as nn
 import torchaudio.transforms as T
 
 
-# ── constants matching the thesis spec ────────────────────────────────────────
+# ── shared constants (identical across all models — thesis requirement) ────────
 SAMPLE_RATE = 22050
-N_FFT = 1024
-HOP_LENGTH = 512
-N_MELS = 64
-# Waveform length that produces exactly 128 time frames:
-#   frames = 1 + (N - n_fft) // hop  =>  N = (128-1)*hop + n_fft
-TARGET_SAMPLES = (128 - 1) * HOP_LENGTH + N_FFT   # 66048  (~3 s)
-N_TIME_FRAMES = 128
+N_FFT       = 1024
+HOP_LENGTH  = 512
+N_MELS      = 64
+
+# Frame count formula (center=False):  frames = 1 + (N - n_fft) // hop
+#   N = (frames - 1) * hop + n_fft
+
+# CNN  — 128 frames  →  N = (128-1)*512 + 1024 = 66 048  (~3.0 s)
+TARGET_SAMPLES   = (128 - 1) * HOP_LENGTH + N_FFT   # 66048
+N_TIME_FRAMES    = 128
+
+# VGGish — 96 frames  →  N = (96-1)*512 + 1024 = 49 664  (~2.25 s)
+# NOTE: The algorithm spec says "4 seconds = 88 200 samples", but
+# 88 200 samples with hop=512/n_fft=1024/center=False produces 171 frames,
+# NOT 96. The CRITICAL CHECK in the spec (output must be [1,64,96]) is the
+# binding constraint. 49 664 samples is the only value consistent with both
+# the preprocessing parameters and the required output shape.
+VGGISH_TARGET_SAMPLES = (96 - 1) * HOP_LENGTH + N_FFT   # 49664
+VGGISH_N_TIME_FRAMES  = 96
 # ──────────────────────────────────────────────────────────────────────────────
 
 
@@ -81,6 +93,54 @@ def _min_max_normalise(x: torch.Tensor) -> torch.Tensor:
     x_max = x.amax(dim=(-2, -1), keepdim=True)
     denom = (x_max - x_min).clamp(min=1e-8)
     return (x - x_min) / denom
+
+
+# ── VGGish transform ─────────────────────────────────────────────────────────
+
+class VGGishMelSpectrogramTransform(nn.Module):
+    """Identical pipeline to MelSpectrogramTransform — only target length differs.
+
+    Input : (1, T)  float32 waveform, already resampled to SAMPLE_RATE
+    Output: (1, 64, 96) float32 in [0, 1]
+
+    The four pipeline steps are bit-for-bit identical to the CNN transform:
+      1. Pad/trim to VGGISH_TARGET_SAMPLES (49 664 samples, ~2.25 s).
+      2. Power Mel spectrogram  (n_mels=64, n_fft=1024, hop=512, center=False).
+      3. Log-dB scale           (10·log10(S + 1e-9), clamped ≥ max − 80 dB).
+      4. Per-clip min-max norm  → [0, 1].
+
+    The ONLY difference vs MelSpectrogramTransform is VGGISH_TARGET_SAMPLES,
+    which is derived from the required 96 time-frame output:
+        target = (96 − 1) × hop + n_fft = 49 664
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.mel = T.MelSpectrogram(
+            sample_rate=SAMPLE_RATE,
+            n_fft=N_FFT,
+            hop_length=HOP_LENGTH,
+            n_mels=N_MELS,
+            power=2.0,
+            center=False,   # frames = 1 + (N - n_fft) // hop = 96 exactly
+        )
+
+    def forward(self, waveform: torch.Tensor) -> torch.Tensor:
+        """
+        Args:
+            waveform: Tensor of shape (1, T).
+        Returns:
+            Tensor of shape (1, 64, 96), values in [0, 1].
+        """
+        waveform = _fix_length(waveform, VGGISH_TARGET_SAMPLES)  # (1, 49664)
+        spec     = self.mel(waveform)                             # (1, 64, 96)
+        log_spec = _to_log_db(spec)                               # (1, 64, 96)
+        norm     = _min_max_normalise(log_spec)                   # (1, 64, 96)
+        assert norm.shape[-1] == VGGISH_N_TIME_FRAMES, (
+            f"[CRITICAL] VGGish spectrogram has {norm.shape[-1]} time frames, "
+            f"expected {VGGISH_N_TIME_FRAMES}. Fix VGGISH_TARGET_SAMPLES."
+        )
+        return norm
 
 
 # ── quick smoke-test ──────────────────────────────────────────────────────────

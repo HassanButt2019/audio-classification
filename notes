@@ -1,0 +1,20 @@
+
+
+
+For images :
+The perturbation is designed to be imperceptible to human eyes while being highly effective at fooling the model. If you could easily see the difference in the top row, the attack would be too obvious to be useful in the real world.
+So the fact that Clean, FGSM, and BIM look identical in Row 1 is not a problem — it is a confirmation that your attacks are working as intended.
+
+FGSM Δ (middle bottom)
+- Chaotic, scattered pattern
+- Red and blue pixels spread randomly across the entire spectrogram
+- Even the silent regions (black in top row) are heavily perturbed
+- This is because FGSM applies one single gradient step uniformly
+  across ALL time-frequency bins regardless of signal content
+BIM Δ (right bottom)
+- Structured, concentrated pattern
+- The strongest perturbation (white/bright red center) aligns exactly 
+  with where the dog bark signal IS — the bright vertical bars in Row 1
+- Silent regions show much weaker perturbation (blue edges)
+- This is because BIM iterates multiple steps, progressively 
+  focusing perturbation on the most vulnerable signal regions

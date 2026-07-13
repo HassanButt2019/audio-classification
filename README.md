@@ -39,12 +39,28 @@ thesis_code/
 | Mode | Description |
 |---|---|
 | `normal` | Standard training on clean data |
-| `adv_train_fgsm` | Train from scratch with FGSM adversarial examples mixed in |
-| `adv_train_bim` | Train from scratch with BIM adversarial examples mixed in |
-| `adv_finetune_fgsm` | Load `normal` checkpoint, fine-tune with FGSM adversarial examples |
-| `adv_finetune_bim` | Load `normal` checkpoint, fine-tune with BIM adversarial examples |
+| `adv_train_fgsm` | Train from scratch with FGSM adversarial examples mixed in (adv_ratio=0.5) |
+| `adv_train_bim` | Train from scratch with BIM adversarial examples mixed in (adv_ratio=0.5, steps=7) |
+| `adv_finetune_fgsm` | Load `normal` checkpoint, fine-tune with FGSM; checkpoint saved by **adversarial** val accuracy |
+| `adv_finetune_bim` | Load `normal` checkpoint, fine-tune with BIM; checkpoint saved by clean val accuracy |
 
 > `adv_finetune_*` modes require `normal` to have run first for the same model.
+
+### adv_finetune_fgsm — what runs each epoch
+
+```
+train:    mix clean + FGSM adversarial (adv_ratio=0.5, batch stays at 128)
+eval:     clean val accuracy  +  FGSM adversarial val accuracy
+save:     checkpoint when adversarial val accuracy improves (not clean val)
+history:  train_loss, train_acc, val_loss, val_acc, adv_val_loss, adv_val_acc
+```
+
+Estimated runtimes (CNN, 10-fold CV):
+
+| Mode | Epochs | Estimated wall time |
+|---|---|---|
+| `adv_finetune_fgsm` | 15 | ~6 h |
+| `adv_finetune_bim` | 15 | ~5 h |
 
 ---
 
@@ -90,6 +106,21 @@ python main.py
 python main.py --epochs 30
 python main.py --batch-size 64
 python main.py --quick 100    # smoke-test with 100 samples per fold
+```
+
+### Run the two adversarial fine-tuning experiments (CNN)
+
+```bash
+# prerequisite — normal checkpoint must exist
+python run_experiments.py --model cnn --mode normal              # ~7.5 h (already done)
+
+# FGSM fine-tuning  (~6 h)
+# saves checkpoint by best adversarial val accuracy; logs clean + adv val each epoch
+python run_experiments.py --model cnn --mode adv_finetune_fgsm
+
+# BIM fine-tuning  (~5 h)
+# saves checkpoint by best clean val accuracy
+python run_experiments.py --model cnn --mode adv_finetune_bim
 ```
 
 ### Single model, single mode

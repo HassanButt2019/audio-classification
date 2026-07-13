@@ -7,7 +7,17 @@
       "Bash(venv/Scripts/python.exe -m pip install --upgrade pip)",
       "Bash(venv/Scripts/python.exe -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124)",
       "Bash(python -c \"import streamlit; print\\(''''Streamlit version:'''', streamlit.__version__\\)\")",
-      "Bash(python -m py_compile application/app.py)"
+      "Bash(python -m py_compile application/app.py)",
+      "Bash(python -c ' *)",
+      "Bash(venv/Scripts/python -c \"import ptflops; print\\(ptflops.__version__\\)\")",
+      "Bash(venv/Scripts/python -c \"from ptflops import get_model_complexity_info; print\\('ok'\\)\")",
+      "Bash(venv/Scripts/python -c ' *)",
+      "Bash(venv/Scripts/python scripts/cnn/efficiency_measurement.py)",
+      "Bash(venv/Scripts/python scripts/cnn/rq1_adversarial_robustness.py)",
+      "Bash(xargs head -60)",
+      "PowerShell(Get-ChildItem -Recurse -Depth 2 -Exclude 'venv','__pycache__' | Where-Object {$_.PSIsContainer} | Select-Object FullName | ForEach-Object {$_.FullName.Replace\\($pwd.Path, '.'\\)} | Sort-Object)",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\hassa\\\\Desktop\\\\Audioclassification\\\\audio-classification\\\\attacks\\\\crnn\")",
+      "PowerShell(New-Item -ItemType File -Force \"c:\\\\Users\\\\hassa\\\\Desktop\\\\Audioclassification\\\\audio-classification\\\\attacks\\\\crnn\\\\__init__.py\")"
     ]
   }
 }

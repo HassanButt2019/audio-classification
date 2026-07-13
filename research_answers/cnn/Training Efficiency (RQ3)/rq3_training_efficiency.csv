@@ -1,0 +1,6 @@
+Strategy,Epochs,Wall Time,Relative Cost
+Baseline,30,07h 17m 59s,1.00x
+AT-FGSM,30,09h 21m 18s,1.28x
+AT-BIM,30,07h 54m 54s,1.08x
+AFT-FGSM,10,03h 53m 32s,0.53x
+AFT-BIM,10,02h 42m 37s,0.37x

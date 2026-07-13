@@ -1,0 +1,161 @@
+{
+  "robustness": [
+    {
+      "strategy": "Baseline",
+      "clean_acc": 69.654,
+      "fgsm": {
+        "eps_0.01": 35.7335,
+        "eps_0.03": 14.3479,
+        "eps_0.1": 4.6081
+      },
+      "bim": {
+        "eps_0.01": 32.5915,
+        "eps_0.03": 9.3275,
+        "eps_0.1": 0.2365
+      },
+      "fgsm_drop": {
+        "eps_0.01": 33.9205,
+        "eps_0.03": 55.3061,
+        "eps_0.1": 65.0459
+      },
+      "bim_drop": {
+        "eps_0.01": 37.0625,
+        "eps_0.03": 60.3265,
+        "eps_0.1": 69.4175
+      }
+    },
+    {
+      "strategy": "AT-FGSM",
+      "clean_acc": 68.438,
+      "fgsm": {
+        "eps_0.01": 54.5355,
+        "eps_0.03": 34.4998,
+        "eps_0.1": 11.2923
+      },
+      "bim": {
+        "eps_0.01": 53.7042,
+        "eps_0.03": 28.901,
+        "eps_0.1": 4.3336
+      },
+      "fgsm_drop": {
+        "eps_0.01": 13.9025,
+        "eps_0.03": 33.9382,
+        "eps_0.1": 57.1457
+      },
+      "bim_drop": {
+        "eps_0.01": 14.7338,
+        "eps_0.03": 39.537,
+        "eps_0.1": 64.1044
+      }
+    },
+    {
+      "strategy": "AT-BIM",
+      "clean_acc": 67.811,
+      "fgsm": {
+        "eps_0.01": 54.8057,
+        "eps_0.03": 35.8311,
+        "eps_0.1": 9.7189
+      },
+      "bim": {
+        "eps_0.01": 53.9956,
+        "eps_0.03": 31.1463,
+        "eps_0.1": 4.026
+      },
+      "fgsm_drop": {
+        "eps_0.01": 13.0053,
+        "eps_0.03": 31.9799,
+        "eps_0.1": 58.0921
+      },
+      "bim_drop": {
+        "eps_0.01": 13.8154,
+        "eps_0.03": 36.6647,
+        "eps_0.1": 63.785
+      }
+    },
+    {
+      "strategy": "AFT-FGSM",
+      "clean_acc": 67.115,
+      "fgsm": {
+        "eps_0.01": 48.321,
+        "eps_0.03": 26.8137,
+        "eps_0.1": 7.4994
+      },
+      "bim": {
+        "eps_0.01": 46.364,
+        "eps_0.03": 19.3986,
+        "eps_0.1": 0.8893
+      },
+      "fgsm_drop": {
+        "eps_0.01": 18.794,
+        "eps_0.03": 40.3013,
+        "eps_0.1": 59.6156
+      },
+      "bim_drop": {
+        "eps_0.01": 20.751,
+        "eps_0.03": 47.7164,
+        "eps_0.1": 66.2257
+      }
+    },
+    {
+      "strategy": "AFT-BIM",
+      "clean_acc": 67.315,
+      "fgsm": {
+        "eps_0.01": 46.5978,
+        "eps_0.03": 24.8678,
+        "eps_0.1": 5.9114
+      },
+      "bim": {
+        "eps_0.01": 44.6279,
+        "eps_0.03": 18.9671,
+        "eps_0.1": 0.9231
+      },
+      "fgsm_drop": {
+        "eps_0.01": 20.7172,
+        "eps_0.03": 42.4472,
+        "eps_0.1": 61.4036
+      },
+      "bim_drop": {
+        "eps_0.01": 22.6871,
+        "eps_0.03": 48.3479,
+        "eps_0.1": 66.3919
+      }
+    }
+  ],
+  "cross_attack": [
+    {
+      "strategy": "Baseline",
+      "mean_fgsm_acc": 18.2299,
+      "mean_bim_acc": 14.0519,
+      "fgsm_bim_gap_pp": 4.178,
+      "mean_robustness": 16.1409
+    },
+    {
+      "strategy": "AT-FGSM",
+      "mean_fgsm_acc": 33.4425,
+      "mean_bim_acc": 28.9796,
+      "fgsm_bim_gap_pp": 4.4629,
+      "mean_robustness": 31.2111
+    },
+    {
+      "strategy": "AT-BIM",
+      "mean_fgsm_acc": 33.4519,
+      "mean_bim_acc": 29.7226,
+      "fgsm_bim_gap_pp": 3.7292,
+      "mean_robustness": 31.5873
+    },
+    {
+      "strategy": "AFT-FGSM",
+      "mean_fgsm_acc": 27.5447,
+      "mean_bim_acc": 22.2173,
+      "fgsm_bim_gap_pp": 5.3274,
+      "mean_robustness": 24.881
+    },
+    {
+      "strategy": "AFT-BIM",
+      "mean_fgsm_acc": 25.7923,
+      "mean_bim_acc": 21.506,
+      "fgsm_bim_gap_pp": 4.2863,
+      "mean_robustness": 23.6492
+    }
+  ]
+}

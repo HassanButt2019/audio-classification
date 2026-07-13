@@ -12,3 +12,4 @@ ptflops>=0.7.0
 pyyaml>=6.0
 streamlit
 plotly
+matplotlib

@@ -153,6 +153,7 @@ def train_fold(
     epochs:      int   = CONFIG["epochs"],
     cfg:         dict  = CONFIG,
     model_class        = UrbanSoundCNN,
+    transform          = None,
 ) -> dict:
     """Train the CNN for one fold of the 10-fold cross-validation protocol.
 
@@ -188,6 +189,7 @@ def train_fold(
         batch_size           = cfg["batch_size"],
         num_workers          = cfg["num_workers"],
         max_samples_per_fold = cfg.get("max_samples_per_fold"),   # None → full data
+        transform            = transform,
     )
     print(f" Train samples : {len(train_loader.dataset)}")
     print(f" Val   samples : {len(val_loader.dataset)}")

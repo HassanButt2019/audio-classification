@@ -62,13 +62,34 @@ from models.crnn   import CRNN
 from train.train               import train_fold, CONFIG
 from train.adversarial_train   import adv_train_fold, ADV_FGSM_CONFIG, ADV_BIM_CONFIG
 from train.finetune_adversarial import finetune_fold, FINETUNE_FGSM_CONFIG, FINETUNE_BIM_CONFIG
+
+# CRNN requires dedicated training functions:
+#   - Orthogonal GRU init + val split + early stopping (normal)
+#   - Gradient clipping to stabilise BPTT in AT and AFT
+#   - Checkpoint saved by adversarial val accuracy in AT (not clean val acc)
+from train.crnn.train_crnn     import train_fold      as crnn_train_fold
+from train.crnn.adv_train_crnn import adv_train_fold  as crnn_adv_train_fold
+from train.crnn.finetune_crnn  import finetune_fold   as crnn_finetune_fold
+
 from evaluate.evaluate         import evaluate_checkpoint
 from attacks.run_attacks       import run_fgsm_all_folds, print_fgsm_results, \
                                       run_bim_all_folds,  print_bim_results
+# CRNN attack evaluation uses cudnn.flags(enabled=False) so GRU backward works
+# in eval mode — the generic evaluate_fgsm/bim assert model.eval() which
+# triggers "cudnn RNN backward can only be called in training mode" on GPU.
+from attacks.crnn.run_attacks_crnn import run_fgsm_all_folds_crnn, \
+                                          run_bim_all_folds_crnn
 from preprocessing.mel_spectrogram import (
     SAMPLE_RATE, N_FFT, HOP_LENGTH, N_MELS, TARGET_SAMPLES, N_TIME_FRAMES
 )
-from config_loader import get_eval_attack_config
+from config_loader import (
+    get_eval_attack_config,
+    get_crnn_config,
+    get_crnn_adv_fgsm_config,
+    get_crnn_adv_bim_config,
+    get_crnn_finetune_fgsm_config,
+    get_crnn_finetune_bim_config,
+)
 
 _eval_cfg = get_eval_attack_config()
 
@@ -98,11 +119,21 @@ MODES = [
 ]
 
 MODE_CONFIGS = {
-    "normal":           CONFIG,
-    "adv_train_fgsm":   ADV_FGSM_CONFIG,
-    "adv_train_bim":    ADV_BIM_CONFIG,
+    "normal":            CONFIG,
+    "adv_train_fgsm":    ADV_FGSM_CONFIG,
+    "adv_train_bim":     ADV_BIM_CONFIG,
     "adv_finetune_fgsm": FINETUNE_FGSM_CONFIG,
     "adv_finetune_bim":  FINETUNE_BIM_CONFIG,
+}
+
+# CRNN uses its own configs because it needs:
+#   epochs=50 (not 30), val_fraction=0.1, early_stop_patience, lr_scheduler_*
+CRNN_MODE_CONFIGS = {
+    "normal":            get_crnn_config(),
+    "adv_train_fgsm":    get_crnn_adv_fgsm_config(),
+    "adv_train_bim":     get_crnn_adv_bim_config(),
+    "adv_finetune_fgsm": get_crnn_finetune_fgsm_config(),
+    "adv_finetune_bim":  get_crnn_finetune_bim_config(),
 }
 
 
@@ -148,38 +179,64 @@ def run_fold(fold, model_name, mode, model_class, results_dir, saved_models_dir,
         "max_samples_per_fold": max_samples_per_fold,
     }
 
-    if mode == "normal":
-        train_result = train_fold(
-            fold=fold, epochs=fold_cfg["epochs"],
-            cfg=fold_cfg, model_class=model_class,
-        )
+    if model_name == "crnn":
+        # CRNN must use dedicated training functions to apply:
+        #   - Orthogonal GRU weight init (normal)
+        #   - Val split + early stopping (normal)
+        #   - Gradient clipping for BPTT stability (adv_train + adv_finetune)
+        #   - Checkpoint by adversarial val accuracy in AT
+        if mode == "normal":
+            train_result = crnn_train_fold(fold=fold, cfg=fold_cfg)
 
-    elif mode == "adv_train_fgsm":
-        train_result = adv_train_fold(
-            fold=fold, cfg=fold_cfg, model_class=model_class,
-        )
+        elif mode in ("adv_train_fgsm", "adv_train_bim"):
+            train_result = crnn_adv_train_fold(fold=fold, cfg=fold_cfg)
 
-    elif mode == "adv_train_bim":
-        train_result = adv_train_fold(
-            fold=fold, cfg=fold_cfg, model_class=model_class,
-        )
-
-    elif mode in ("adv_finetune_fgsm", "adv_finetune_bim"):
-        normal_ckpt = os.path.join(
-            SAVED_MODELS_ROOT, model_name, "normal", f"best_fold{fold}.pt"
-        )
-        if not os.path.exists(normal_ckpt):
-            raise FileNotFoundError(
-                f"Normal-training checkpoint not found: {normal_ckpt}\n"
-                f"Run 'normal' mode for {model_name} first."
+        elif mode in ("adv_finetune_fgsm", "adv_finetune_bim"):
+            normal_ckpt = os.path.join(
+                SAVED_MODELS_ROOT, model_name, "normal", f"best_fold{fold}.pt"
             )
-        train_result = finetune_fold(
-            fold=fold, pretrained_ckpt=normal_ckpt,
-            cfg=fold_cfg, model_class=model_class,
-        )
+            if not os.path.exists(normal_ckpt):
+                raise FileNotFoundError(
+                    f"CRNN baseline checkpoint not found: {normal_ckpt}\n"
+                    "Run 'python train/crnn/train_crnn.py' or "
+                    "'python run_experiments.py --model crnn --mode normal' first."
+                )
+            train_result = crnn_finetune_fold(
+                fold=fold, pretrained_ckpt=normal_ckpt, cfg=fold_cfg,
+            )
+
+        else:
+            raise ValueError(f"Unknown mode: {mode!r}")
 
     else:
-        raise ValueError(f"Unknown mode: {mode!r}")
+        # CNN and VGGish — generic training functions
+        if mode == "normal":
+            train_result = train_fold(
+                fold=fold, epochs=fold_cfg["epochs"],
+                cfg=fold_cfg, model_class=model_class,
+            )
+
+        elif mode in ("adv_train_fgsm", "adv_train_bim"):
+            train_result = adv_train_fold(
+                fold=fold, cfg=fold_cfg, model_class=model_class,
+            )
+
+        elif mode in ("adv_finetune_fgsm", "adv_finetune_bim"):
+            normal_ckpt = os.path.join(
+                SAVED_MODELS_ROOT, model_name, "normal", f"best_fold{fold}.pt"
+            )
+            if not os.path.exists(normal_ckpt):
+                raise FileNotFoundError(
+                    f"Normal-training checkpoint not found: {normal_ckpt}\n"
+                    f"Run 'normal' mode for {model_name} first."
+                )
+            train_result = finetune_fold(
+                fold=fold, pretrained_ckpt=normal_ckpt,
+                cfg=fold_cfg, model_class=model_class,
+            )
+
+        else:
+            raise ValueError(f"Unknown mode: {mode!r}")
 
     metrics = evaluate_checkpoint(
         checkpoint_path = train_result["checkpoint_path"],
@@ -207,7 +264,7 @@ def run_fold(fold, model_name, mode, model_class, results_dir, saved_models_dir,
 def run_experiment(model_name, mode, max_samples_per_fold=None, epochs=None):
     """Run the full 10-fold CV for one model/mode combination."""
     model_class = MODELS[model_name]
-    cfg         = MODE_CONFIGS[mode]
+    cfg         = CRNN_MODE_CONFIGS[mode] if model_name == "crnn" else MODE_CONFIGS[mode]
     results_dir, saved_models_dir = _experiment_dirs(model_name, mode)
 
     print(f"\n{'#'*60}")
@@ -311,30 +368,53 @@ def run_experiment(model_name, mode, max_samples_per_fold=None, epochs=None):
     print(f"\n{'='*60}")
     print(f" FGSM Attack Evaluation  [{model_name.upper()} / {mode}]")
     print(f"{'='*60}")
-    fgsm_results = run_fgsm_all_folds(
-        model_class      = model_class,
-        saved_models_dir = saved_models_dir,
-        data_root        = DATA_ROOT,
-        device           = device,
-        epsilons         = epsilons,
-        batch_size       = cfg["batch_size"],
-        num_workers      = cfg["num_workers"],
-    )
+    if model_name == "crnn":
+        fgsm_results = run_fgsm_all_folds_crnn(
+            model_class      = model_class,
+            saved_models_dir = saved_models_dir,
+            data_root        = DATA_ROOT,
+            device           = device,
+            epsilons         = epsilons,
+            batch_size       = cfg["batch_size"],
+            num_workers      = cfg["num_workers"],
+        )
+    else:
+        fgsm_results = run_fgsm_all_folds(
+            model_class      = model_class,
+            saved_models_dir = saved_models_dir,
+            data_root        = DATA_ROOT,
+            device           = device,
+            epsilons         = epsilons,
+            batch_size       = cfg["batch_size"],
+            num_workers      = cfg["num_workers"],
+        )
     print_fgsm_results(clean_accuracies, fgsm_results, epsilons)
 
     print(f"\n{'='*60}")
     print(f" BIM Attack Evaluation  [{model_name.upper()} / {mode}]  steps={bim_steps}")
     print(f"{'='*60}")
-    bim_results = run_bim_all_folds(
-        model_class      = model_class,
-        saved_models_dir = saved_models_dir,
-        data_root        = DATA_ROOT,
-        device           = device,
-        epsilons         = epsilons,
-        steps            = bim_steps,
-        batch_size       = cfg["batch_size"],
-        num_workers      = cfg["num_workers"],
-    )
+    if model_name == "crnn":
+        bim_results = run_bim_all_folds_crnn(
+            model_class      = model_class,
+            saved_models_dir = saved_models_dir,
+            data_root        = DATA_ROOT,
+            device           = device,
+            epsilons         = epsilons,
+            steps            = bim_steps,
+            batch_size       = cfg["batch_size"],
+            num_workers      = cfg["num_workers"],
+        )
+    else:
+        bim_results = run_bim_all_folds(
+            model_class      = model_class,
+            saved_models_dir = saved_models_dir,
+            data_root        = DATA_ROOT,
+            device           = device,
+            epsilons         = epsilons,
+            steps            = bim_steps,
+            batch_size       = cfg["batch_size"],
+            num_workers      = cfg["num_workers"],
+        )
     print_bim_results(clean_accuracies, bim_results, epsilons)
 
     # ── cv_summary.json ───────────────────────────────────────────────────────
