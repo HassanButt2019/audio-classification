@@ -59,7 +59,8 @@ def print_fgsm_results(clean_accuracies, fgsm_results, epsilons):
 
 
 def run_fgsm_all_folds(model_class, saved_models_dir, data_root,
-                        device, epsilons, batch_size=32, num_workers=4):
+                        device, epsilons, batch_size=32, num_workers=4,
+                        transform=None):
     """Run FGSM attack on all 10 folds.
 
     Args:
@@ -101,6 +102,7 @@ def run_fgsm_all_folds(model_class, saved_models_dir, data_root,
             test_fold   = fold,
             batch_size  = batch_size,
             num_workers = num_workers,
+            transform   = transform,
         )
 
         fold_results = {}
@@ -164,7 +166,8 @@ def print_bim_results(clean_accuracies, bim_results, epsilons):
 
 
 def run_bim_all_folds(model_class, saved_models_dir, data_root,
-                      device, epsilons, steps=10, batch_size=32, num_workers=4):
+                      device, epsilons, steps=10, batch_size=32, num_workers=4,
+                      transform=None):
     """Run BIM attack on all 10 folds.
 
     Alpha (per-step size) is set to epsilon / steps for each epsilon value,
@@ -210,6 +213,7 @@ def run_bim_all_folds(model_class, saved_models_dir, data_root,
             test_fold   = fold,
             batch_size  = batch_size,
             num_workers = num_workers,
+            transform   = transform,
         )
 
         fold_results = {}

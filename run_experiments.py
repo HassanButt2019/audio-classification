@@ -71,6 +71,10 @@ from train.crnn.train_crnn     import train_fold      as crnn_train_fold
 from train.crnn.adv_train_crnn import adv_train_fold  as crnn_adv_train_fold
 from train.crnn.finetune_crnn  import finetune_fold   as crnn_finetune_fold
 
+# VGGish baseline uses a dedicated train_fold that applies VGGishMelSpectrogramTransform
+# internally (96 time-frames); AT and AFT use the generic functions with transform=.
+from train.train_vggish        import train_fold      as vggish_train_fold
+
 from evaluate.evaluate         import evaluate_checkpoint
 from attacks.run_attacks       import run_fgsm_all_folds, print_fgsm_results, \
                                       run_bim_all_folds,  print_bim_results
@@ -80,7 +84,8 @@ from attacks.run_attacks       import run_fgsm_all_folds, print_fgsm_results, \
 from attacks.crnn.run_attacks_crnn import run_fgsm_all_folds_crnn, \
                                           run_bim_all_folds_crnn
 from preprocessing.mel_spectrogram import (
-    SAMPLE_RATE, N_FFT, HOP_LENGTH, N_MELS, TARGET_SAMPLES, N_TIME_FRAMES
+    SAMPLE_RATE, N_FFT, HOP_LENGTH, N_MELS, TARGET_SAMPLES, N_TIME_FRAMES,
+    VGGishMelSpectrogramTransform,
 )
 from config_loader import (
     get_eval_attack_config,
@@ -89,6 +94,11 @@ from config_loader import (
     get_crnn_adv_bim_config,
     get_crnn_finetune_fgsm_config,
     get_crnn_finetune_bim_config,
+    get_vggish_config,
+    get_vggish_adv_fgsm_config,
+    get_vggish_adv_bim_config,
+    get_vggish_finetune_fgsm_config,
+    get_vggish_finetune_bim_config,
 )
 
 _eval_cfg = get_eval_attack_config()
@@ -134,6 +144,16 @@ CRNN_MODE_CONFIGS = {
     "adv_train_bim":     get_crnn_adv_bim_config(),
     "adv_finetune_fgsm": get_crnn_finetune_fgsm_config(),
     "adv_finetune_bim":  get_crnn_finetune_bim_config(),
+}
+
+# VGGish uses its own configs because it needs:
+#   weight_decay=1e-4, epochs=50, val_fraction=0.1, early_stop_patience, lr_scheduler_*
+VGGISH_MODE_CONFIGS = {
+    "normal":            get_vggish_config(),
+    "adv_train_fgsm":    get_vggish_adv_fgsm_config(),
+    "adv_train_bim":     get_vggish_adv_bim_config(),
+    "adv_finetune_fgsm": get_vggish_finetune_fgsm_config(),
+    "adv_finetune_bim":  get_vggish_finetune_bim_config(),
 }
 
 
@@ -208,8 +228,40 @@ def run_fold(fold, model_name, mode, model_class, results_dir, saved_models_dir,
         else:
             raise ValueError(f"Unknown mode: {mode!r}")
 
+    elif model_name == "vggish":
+        # VGGish — baseline uses dedicated train_fold (handles transform internally);
+        # AT and AFT use generic functions with VGGishMelSpectrogramTransform passed in.
+        vggish_transform = VGGishMelSpectrogramTransform()
+
+        if mode == "normal":
+            train_result = vggish_train_fold(fold=fold, cfg=fold_cfg)
+
+        elif mode in ("adv_train_fgsm", "adv_train_bim"):
+            train_result = adv_train_fold(
+                fold=fold, cfg=fold_cfg, model_class=model_class,
+                transform=vggish_transform,
+            )
+
+        elif mode in ("adv_finetune_fgsm", "adv_finetune_bim"):
+            normal_ckpt = os.path.join(
+                SAVED_MODELS_ROOT, model_name, "normal", f"best_fold{fold}.pt"
+            )
+            if not os.path.exists(normal_ckpt):
+                raise FileNotFoundError(
+                    f"VGGish baseline checkpoint not found: {normal_ckpt}\n"
+                    "Run 'python run_experiments.py --model vggish --mode normal' first."
+                )
+            train_result = finetune_fold(
+                fold=fold, pretrained_ckpt=normal_ckpt,
+                cfg=fold_cfg, model_class=model_class,
+                transform=vggish_transform,
+            )
+
+        else:
+            raise ValueError(f"Unknown mode: {mode!r}")
+
     else:
-        # CNN and VGGish — generic training functions
+        # CNN — generic training functions
         if mode == "normal":
             train_result = train_fold(
                 fold=fold, epochs=fold_cfg["epochs"],
@@ -238,6 +290,7 @@ def run_fold(fold, model_name, mode, model_class, results_dir, saved_models_dir,
         else:
             raise ValueError(f"Unknown mode: {mode!r}")
 
+    eval_transform = VGGishMelSpectrogramTransform() if model_name == "vggish" else None
     metrics = evaluate_checkpoint(
         checkpoint_path = train_result["checkpoint_path"],
         data_root       = DATA_ROOT,
@@ -246,6 +299,7 @@ def run_fold(fold, model_name, mode, model_class, results_dir, saved_models_dir,
         num_workers     = fold_cfg["num_workers"],
         verbose         = True,
         model_class     = model_class,
+        transform       = eval_transform,
     )
 
     fold_record = {
@@ -264,7 +318,12 @@ def run_fold(fold, model_name, mode, model_class, results_dir, saved_models_dir,
 def run_experiment(model_name, mode, max_samples_per_fold=None, epochs=None):
     """Run the full 10-fold CV for one model/mode combination."""
     model_class = MODELS[model_name]
-    cfg         = CRNN_MODE_CONFIGS[mode] if model_name == "crnn" else MODE_CONFIGS[mode]
+    if model_name == "crnn":
+        cfg = CRNN_MODE_CONFIGS[mode]
+    elif model_name == "vggish":
+        cfg = VGGISH_MODE_CONFIGS[mode]
+    else:
+        cfg = MODE_CONFIGS[mode]
     results_dir, saved_models_dir = _experiment_dirs(model_name, mode)
 
     print(f"\n{'#'*60}")
@@ -368,6 +427,8 @@ def run_experiment(model_name, mode, max_samples_per_fold=None, epochs=None):
     print(f"\n{'='*60}")
     print(f" FGSM Attack Evaluation  [{model_name.upper()} / {mode}]")
     print(f"{'='*60}")
+    attack_transform = VGGishMelSpectrogramTransform() if model_name == "vggish" else None
+
     if model_name == "crnn":
         fgsm_results = run_fgsm_all_folds_crnn(
             model_class      = model_class,
@@ -387,6 +448,7 @@ def run_experiment(model_name, mode, max_samples_per_fold=None, epochs=None):
             epsilons         = epsilons,
             batch_size       = cfg["batch_size"],
             num_workers      = cfg["num_workers"],
+            transform        = attack_transform,
         )
     print_fgsm_results(clean_accuracies, fgsm_results, epsilons)
 
@@ -414,6 +476,7 @@ def run_experiment(model_name, mode, max_samples_per_fold=None, epochs=None):
             steps            = bim_steps,
             batch_size       = cfg["batch_size"],
             num_workers      = cfg["num_workers"],
+            transform        = attack_transform,
         )
     print_bim_results(clean_accuracies, bim_results, epsilons)
 

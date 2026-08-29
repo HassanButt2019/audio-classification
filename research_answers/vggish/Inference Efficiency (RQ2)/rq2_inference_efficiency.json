@@ -1,0 +1,27 @@
+[
+  {
+    "strategy": "Baseline",
+    "flops_gmac": 0.8676,
+    "parameters_m": 71.6577
+  },
+  {
+    "strategy": "AT-FGSM",
+    "flops_gmac": 0.8676,
+    "parameters_m": 71.6577
+  },
+  {
+    "strategy": "AT-BIM",
+    "flops_gmac": 0.8676,
+    "parameters_m": 71.6577
+  },
+  {
+    "strategy": "AFT-FGSM",
+    "flops_gmac": 0.8676,
+    "parameters_m": 71.6577
+  },
+  {
+    "strategy": "AFT-BIM",
+    "flops_gmac": 0.8676,
+    "parameters_m": 71.6577
+  }
+]

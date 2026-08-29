@@ -1,0 +1,11 @@
+{
+  "model": "cnn",
+  "mode": "adv_train_bim",
+  "epochs": 30,
+  "batch_size": 128,
+  "lr": 0.001,
+  "attack_type": "bim",
+  "adv_epsilon": 0.03,
+  "adv_ratio": 0.5,
+  "bim_steps": 7
+}

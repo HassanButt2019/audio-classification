@@ -1,0 +1,88 @@
+{
+  "fold": 8,
+  "checkpoint": "C:\\Users\\hassa\\Desktop\\Audioclassification\\audio-classification\\saved_models\\crnn\\adv_finetune_bim\\best_fold8.pt",
+  "best_val_acc": 88.38383838383838,
+  "training_history": {
+    "train_loss": [
+      4.430667,
+      1.560063,
+      1.303592,
+      1.183074,
+      1.110314,
+      1.04795,
+      0.999514,
+      0.954207,
+      0.929194,
+      0.887462
+    ],
+    "train_acc": [
+      51.612,
+      51.5419,
+      56.3218,
+      59.5879,
+      61.7886,
+      63.4287,
+      64.1435,
+      66.3723,
+      67.2694,
+      68.9235
+    ],
+    "val_loss": [
+      0.64754,
+      0.713965,
+      0.64742,
+      0.576303,
+      0.551696,
+      0.506296,
+      0.490027,
+      0.470402,
+      0.456105,
+      0.430909
+    ],
+    "val_acc": [
+      82.8283,
+      83.7121,
+      83.4596,
+      84.4697,
+      84.8485,
+      86.6162,
+      86.3636,
+      88.3838,
+      88.1313,
+      88.3838
+    ],
+    "adv_val_loss": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "adv_val_acc": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "test_metrics": {
+    "accuracy": 0.7221,
+    "precision_macro": 0.7393,
+    "precision_weighted": 0.7167,
+    "recall_macro": 0.7523,
+    "recall_weighted": 0.7221,
+    "f1_macro": 0.7429,
+    "f1_weighted": 0.7161
+  }
+}

@@ -1,0 +1,6 @@
+Strategy,Mean FGSM Acc (%),Mean BIM Acc (%),FGSM-BIM Gap (pp),Mean Robustness (%)
+Baseline,15.09,6.82,+8.27,10.95
+AT-FGSM,33.99,27.77,+6.22,30.88
+AT-BIM,35.08,29.54,+5.54,32.31
+AFT-FGSM,32.16,21.95,+10.21,27.06
+AFT-BIM,33.41,26.69,+6.72,30.05

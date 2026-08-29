@@ -16,14 +16,13 @@ data/UrbanSound8K/
 data/UrbanSound8K.tar.gz
 
 # Training outputs
-saved_models/
-results/
-
+data/
 # OS/editor files
 .DS_Store
 .vscode/
 .idea/
 
+saved_models/
 
 
 

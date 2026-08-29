@@ -1,50 +1,94 @@
 
-CNN (Simple CNN) — DONE
+CNN (Simple CNN) — FULLY COMPLETE
 
  [x] Build CNN pipeline
  [x] Verify on 100 samples per fold
- [x] Run full dataset — 10-fold cross validation
+ [x] Run full dataset baseline — 10-fold cross validation  (mean acc: 69.65%)
  [x] FGSM attack on baseline
  [x] BIM attack on baseline
- [x] AT with FGSM
- [x] AT with BIM
+ [x] AT with FGSM                                          (mean acc: 68.44%)
+ [x] AT with BIM                                           (mean acc: 67.81%)
  [x] Rerun AT with batch size 128 (fix methodological inconsistency)
- [x] Adversarial Fine-Tuning with FGSM
- [x] Adversarial Fine-Tuning with BIM
+ [x] Adversarial Fine-Tuning with FGSM                     (mean acc: 67.11%)
+ [x] Adversarial Fine-Tuning with BIM                      (mean acc: 67.31%)
  [x] Efficiency measurement with ptflops (CNN baseline)
  [x] Efficiency measurement with ptflops (AT FGSM)
  [x] Efficiency measurement with ptflops (AT BIM)
  [x] Efficiency measurement with ptflops (AFT FGSM)
  [x] Efficiency measurement with ptflops (AFT BIM)
+ [x] RQ1 — Adversarial Robustness Analysis
+       Strategy   Clean    FGSM@0.01  FGSM@0.03  FGSM@0.10  BIM@0.01  BIM@0.03  BIM@0.10
+       Baseline   69.65%   35.73%     14.35%      4.61%     32.59%     9.33%     0.24%
+       AT-FGSM    68.44%   54.54%     34.50%     11.29%     53.70%    28.90%     4.33%
+       AT-BIM     67.81%   54.81%     35.83%      9.72%     54.00%    31.15%     4.03%
+       AFT-FGSM   67.11%   48.32%     26.81%      7.50%     46.36%    19.40%     0.89%
+       AFT-BIM    67.31%   46.60%     24.87%      5.91%     44.63%    18.97%     0.92%
+ [x] RQ2 — Inference Efficiency
+       FLOPs: 0.0843 GMac   |   Parameters: 4.29 M   (same across all 5 strategies)
+ [x] RQ3 — Training Efficiency
+       Baseline   30 epochs   07h 18m   1.00x
+       AT-FGSM    30 epochs   09h 21m   1.28x
+       AT-BIM     30 epochs   07h 55m   1.08x
+       AFT-FGSM   10 epochs   03h 54m   0.53x
+       AFT-BIM    10 epochs   02h 43m   0.37x
 
 
 
 
-VGGish — Architecture Built, Experiments Not Started
+VGGish — FULLY COMPLETE
 
  [x] Build VGGish architecture
- [ ] Run full dataset baseline — 10-fold cross validation
- [ ] Verify accuracy against literature (target 73% to 79%)
- [ ] FGSM attack on VGGish baseline
- [ ] BIM attack on VGGish baseline
- [ ] AT with FGSM on VGGish
- [ ] AT with BIM on VGGish
- [ ] Adversarial Fine-Tuning with FGSM on VGGish
- [ ] Adversarial Fine-Tuning with BIM on VGGish
- [ ] Efficiency measurement with ptflops (all VGGish experiments)
+ [x] Fix input shape mismatch (VGGishMelSpectrogramTransform wired through evaluate, attacks, run_experiments)
+ [x] Run full dataset baseline — 10-fold cross validation  (mean acc: 66.11%)
+ [x] FGSM attack on VGGish baseline
+ [x] BIM attack on VGGish baseline
+ [x] AT with FGSM on VGGish                               (mean acc: 67.07%)
+ [x] AT with BIM on VGGish                                (mean acc: 66.79%)
+ [x] Adversarial Fine-Tuning with FGSM on VGGish          (mean acc: 67.31%)
+ [x] Adversarial Fine-Tuning with BIM on VGGish           (mean acc: 67.09%)
+ [x] RQ1 — Adversarial Robustness Analysis
+       Strategy   Clean    FGSM@0.01  FGSM@0.03  FGSM@0.10  BIM@0.01  BIM@0.03  BIM@0.10
+       Baseline   66.11%   27.29%     14.58%     11.16%     22.05%     6.72%     1.22%
+       AT-FGSM    67.07%   50.78%     32.85%     14.44%     49.48%    26.29%     4.07%
+       AT-BIM     66.79%   52.14%     35.03%     14.10%     51.11%    29.83%     5.02%
+       AFT-FGSM   67.31%   47.02%     29.53%     15.17%     43.74%    17.78%     0.93%
+       AFT-BIM    67.09%   49.44%     30.40%      9.92%     48.19%    23.63%     1.60%
+ [x] RQ2 — Inference Efficiency
+       FLOPs: 0.8676 GMac   |   Parameters: 71.66 M   (same across all 5 strategies)
+ [x] RQ3 — Training Efficiency
+       Baseline   50 epochs   11h 02m   1.00x
+       AT-FGSM    50 epochs   12h 56m   1.17x
+       AT-BIM     50 epochs   13h 17m   1.20x
+       AFT-FGSM   10 epochs   03h 28m   0.31x
+       AFT-BIM    10 epochs   02h 43m   0.25x
+ [ ] Verify accuracy against literature (target 73–79%; current baseline 66.11% is below)
 
 
 
 
-CRNN — All Experiments Done, Efficiency Pending
+CRNN — FULLY COMPLETE (except baseline wall-time missing)
 
  [x] Build CRNN architecture with Bidirectional GRU
- [x] Run full dataset baseline — 10-fold cross validation
+ [x] Run full dataset baseline — 10-fold cross validation  (mean acc: 75.10%)
  [x] Verify accuracy is reasonable
  [x] FGSM attack on CRNN baseline
  [x] BIM attack on CRNN baseline
- [x] AT with FGSM on CRNN
- [x] AT with BIM on CRNN
- [x] Adversarial Fine-Tuning with FGSM on CRNN
- [x] Adversarial Fine-Tuning with BIM on CRNN
- [ ] Efficiency measurement with ptflops (all CRNN experiments)
+ [x] AT with FGSM on CRNN                                 (mean acc: 68.39%)
+ [x] AT with BIM on CRNN                                  (mean acc: 68.17%)
+ [x] Adversarial Fine-Tuning with FGSM on CRNN            (mean acc: 71.24%)
+ [x] Adversarial Fine-Tuning with BIM on CRNN             (mean acc: 68.61%)
+ [x] RQ1 — Adversarial Robustness Analysis
+       Strategy   Clean    FGSM@0.01  FGSM@0.03  FGSM@0.10  BIM@0.01  BIM@0.03  BIM@0.10
+       Baseline   75.10%   25.77%     11.37%      8.13%     17.92%     2.53%     0.01%
+       AT-FGSM    68.39%   52.26%     34.75%     14.96%     51.04%    28.35%     3.92%
+       AT-BIM     68.17%   54.28%     35.93%     15.03%     53.46%    30.79%     4.38%
+       AFT-FGSM   71.24%   49.59%     31.68%     15.22%     46.09%    18.95%     0.81%
+       AFT-BIM    68.61%   53.05%     34.14%     13.05%     51.58%    26.10%     2.40%
+ [x] RQ2 — Inference Efficiency
+       FLOPs: 0.0953 GMac   |   Parameters: 2.61 M   (same across all 5 strategies)
+ [x] RQ3 — Training Efficiency
+       Baseline   50 epochs   N/A (patched run — wall time not recorded)
+       AT-FGSM    50 epochs   24h 55m
+       AT-BIM     50 epochs   18h 09m
+       AFT-FGSM   10 epochs   03h 16m
+       AFT-BIM    10 epochs   02h 54m

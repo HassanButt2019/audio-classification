@@ -1,0 +1,32 @@
+[
+  {
+    "strategy": "Baseline",
+    "epochs": 50,
+    "wall_time": "N/A (assembled from fold results)",
+    "relative_cost": null
+  },
+  {
+    "strategy": "AT-FGSM",
+    "epochs": 50,
+    "wall_time": "24h 55m 12s",
+    "relative_cost": null
+  },
+  {
+    "strategy": "AT-BIM",
+    "epochs": 50,
+    "wall_time": "18h 08m 55s",
+    "relative_cost": null
+  },
+  {
+    "strategy": "AFT-FGSM",
+    "epochs": 10,
+    "wall_time": "03h 16m 25s",
+    "relative_cost": null
+  },
+  {
+    "strategy": "AFT-BIM",
+    "epochs": 10,
+    "wall_time": "02h 53m 43s",
+    "relative_cost": null
+  }
+]

@@ -183,3 +183,92 @@ def get_crnn_finetune_bim_config() -> dict:
         "save_dir":        os.path.join(_PROJECT_ROOT, "saved_models", "crnn", "adv_finetune_bim"),
     })
     return cfg
+
+
+# ── VGGish configs ────────────────────────────────────────────────────────────
+# VGGish requires dedicated configs because it differs from CNN in three ways:
+#   1. weight_decay=1e-4 (CNN has none)
+#   2. 50 epochs with ReduceLROnPlateau + early stopping (CNN has 30 epochs, no scheduler)
+#   3. val_fraction=0.1 for early stopping criterion
+# Input shape is [1,64,96] — handled by VGGishMelSpectrogramTransform.
+
+def get_vggish_config() -> dict:
+    """VGGish baseline training config.
+
+    50 epochs, ReduceLROnPlateau scheduler, early stopping (patience=15).
+    10 % of train folds held out as validation for early stopping criterion.
+    weight_decay=1e-4 (CNN has no weight decay).
+    """
+    raw = _load_yaml()
+    t   = raw["training"]
+    v   = raw["vggish"]
+    return {
+        "data_root":             os.path.join(_PROJECT_ROOT, t["data_root"]),
+        "save_dir":              os.path.join(_PROJECT_ROOT, "saved_models", "vggish", "normal"),
+        "batch_size":            v["batch_size"],
+        "num_workers":           t["num_workers"],
+        "lr":                    v["lr"],
+        "weight_decay":          v["weight_decay"],
+        "epochs":                v["epochs"],
+        "dropout":               v["dropout"],
+        "num_classes":           v["num_classes"],
+        "val_fraction":          v["val_fraction"],
+        "early_stop_patience":   v["early_stop_patience"],
+        "lr_scheduler_factor":   v["lr_scheduler_factor"],
+        "lr_scheduler_patience": v["lr_scheduler_patience"],
+    }
+
+
+def get_vggish_adv_fgsm_config() -> dict:
+    """VGGish adversarial training with FGSM."""
+    raw = _load_yaml()
+    cfg = get_vggish_config()
+    atk = raw["attacks"]["fgsm"]
+    cfg.update({
+        "attack_type": "fgsm",
+        "adv_epsilon": atk["epsilon"],
+        "adv_ratio":   atk["adv_ratio"],
+        "save_dir":    os.path.join(_PROJECT_ROOT, "saved_models", "vggish", "adv_train_fgsm"),
+    })
+    return cfg
+
+
+def get_vggish_adv_bim_config() -> dict:
+    """VGGish adversarial training with BIM."""
+    raw = _load_yaml()
+    cfg = get_vggish_config()
+    atk = raw["attacks"]["bim"]
+    cfg.update({
+        "attack_type": "bim",
+        "adv_epsilon": atk["epsilon"],
+        "adv_ratio":   atk["adv_ratio"],
+        "bim_steps":   atk["train_steps"],
+        "save_dir":    os.path.join(_PROJECT_ROOT, "saved_models", "vggish", "adv_train_bim"),
+    })
+    return cfg
+
+
+def get_vggish_finetune_fgsm_config() -> dict:
+    """VGGish adversarial fine-tuning with FGSM."""
+    raw = _load_yaml()
+    cfg = get_vggish_adv_fgsm_config()
+    ft  = raw["finetune"]
+    cfg.update({
+        "finetune_epochs": ft["epochs"],
+        "finetune_lr":     ft["lr"],
+        "save_dir":        os.path.join(_PROJECT_ROOT, "saved_models", "vggish", "adv_finetune_fgsm"),
+    })
+    return cfg
+
+
+def get_vggish_finetune_bim_config() -> dict:
+    """VGGish adversarial fine-tuning with BIM."""
+    raw = _load_yaml()
+    cfg = get_vggish_adv_bim_config()
+    ft  = raw["finetune"]
+    cfg.update({
+        "finetune_epochs": ft["epochs"],
+        "finetune_lr":     ft["lr"],
+        "save_dir":        os.path.join(_PROJECT_ROOT, "saved_models", "vggish", "adv_finetune_bim"),
+    })
+    return cfg

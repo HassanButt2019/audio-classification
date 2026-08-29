@@ -152,6 +152,7 @@ def evaluate_checkpoint(
     num_workers:     int = 4,
     verbose:         bool = True,
     model_class            = UrbanSoundCNN,
+    transform              = None,
 ) -> dict:
     """Load a saved checkpoint and evaluate it on its test fold.
 
@@ -163,6 +164,8 @@ def evaluate_checkpoint(
         num_workers:     DataLoader workers.
         verbose:         Print metrics table and per-class report.
         model_class:     Model class to instantiate (default: UrbanSoundCNN).
+        transform:       Preprocessing transform. None → CNN default (128 frames).
+                         Pass VGGishMelSpectrogramTransform() for VGGish (96 frames).
 
     Returns:
         Metrics dictionary from compute_metrics().
@@ -180,6 +183,7 @@ def evaluate_checkpoint(
         test_fold   = fold,
         batch_size  = batch_size,
         num_workers = num_workers,
+        transform   = transform,
     )
 
     # ── collect predictions ───────────────────────────────────────────────────

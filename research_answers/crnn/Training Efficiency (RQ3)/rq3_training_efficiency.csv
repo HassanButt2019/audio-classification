@@ -1,0 +1,6 @@
+Strategy,Epochs,Wall Time,Relative Cost
+Baseline,50,N/A (assembled from fold results),N/A
+AT-FGSM,50,24h 55m 12s,N/A
+AT-BIM,50,18h 08m 55s,N/A
+AFT-FGSM,10,03h 16m 25s,N/A
+AFT-BIM,10,02h 53m 43s,N/A

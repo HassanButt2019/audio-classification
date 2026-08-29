@@ -1,0 +1,10 @@
+{
+  "model": "vggish",
+  "mode": "adv_train_fgsm",
+  "epochs": 50,
+  "batch_size": 128,
+  "lr": 0.001,
+  "attack_type": "fgsm",
+  "adv_epsilon": 0.03,
+  "adv_ratio": 0.5
+}
